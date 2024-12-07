@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-
+import reactLogo from '../assets/react.svg';
 const Header: React.FC = () => {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -14,11 +14,11 @@ const Header: React.FC = () => {
         <div className="flex justify-between items-center h-20">
           {/* Logo Section */}
           <div className="flex items-center">
-            <img 
-              src="src/assets/react.svg" 
-              alt="Logo" 
-              className="h-10 w-auto animate-spin-slow"
-            />
+          <img 
+  src={reactLogo}
+  alt="Logo" 
+  className="h-10 w-auto animate-spin-slow"
+/>
           </div>
 
           {/* Main Navigation - Desktop */}
