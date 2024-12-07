@@ -25,7 +25,7 @@ const Header: React.FC = () => {
           <div className="hidden md:flex items-center justify-center flex-1">
             <div className="flex space-x-8 space-x-reverse">
               <Link 
-                to="/home" 
+                to="/" 
                 className={`text-white text-base font-medium transition-all duration-300 border-b-2 
                           ${isActive('/') ? 'border-white' : 'border-transparent hover:border-white/50'} 
                           py-2 px-1`}
