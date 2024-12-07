@@ -17,7 +17,7 @@ const App: React.FC = () => {
     <main className="container mx-auto px-4 py-8">
       <Routes>
 
-        <Route path="/home" element={<Home />} />
+        <Route path="/" element={<Home />} />
         <Route path="/about-us" element={<AboutUs />} />
         <Route path="/contact-me" element={<ContactMe />} />
       </Routes>
