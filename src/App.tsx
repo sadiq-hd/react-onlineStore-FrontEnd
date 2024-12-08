@@ -6,9 +6,13 @@ import AboutUs from './pages/about-us/about-us';
 import './index.css';
 import ContactMe from './pages/contact-me/contact-me';
 import WhatsAppButton from './components/WhatsAppButton';
+import { CartProvider } from './context/CartContext';
+import Cart from './pages/Cart';
 
 const App: React.FC = () => {
   return (
+    <CartProvider>
+
     <div dir="rtl" className="font-sans">
       <Header />
       
@@ -20,11 +24,14 @@ const App: React.FC = () => {
         <Route path="/" element={<Home />} />
           <Route path="/about-us" element={<AboutUs />} />
           <Route path="/contact-me" element={<ContactMe />} />
+          <Route path="/cart" element={<Cart />} />
         </Routes>
       </main>
 
       <WhatsAppButton />
     </div>
+    </CartProvider>
+
   );
 };
 

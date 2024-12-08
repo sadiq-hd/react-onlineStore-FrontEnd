@@ -1,14 +1,27 @@
 import React from 'react';
 import { useProducts } from '../../typerScript/useProducts';
 import { dummyProducts } from '../../typerScript/useProducts';
+import { useCart } from '../../context/CartContext';
 
 const Home: React.FC = () => {
   const { currentImageIndex, nextImage, prevImage, setCurrentImageIndex } = useProducts();
+  const { dispatch } = useCart();
+
+  const handleAddToCart = (product: any) => {
+    dispatch({
+      type: 'ADD_ITEM',
+      payload: {
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        image: product.images[currentImageIndex[product.id] || 0],
+        quantity: 1
+      }
+    });
+  };
 
   return (
     <div className="container mx-auto px-4 py-8 rtl">
-
-
       {/* شريط البحث */}
       <div className="flex justify-center mb-8">
         <div className="w-full max-w-2xl flex space-x-4 rtl:space-x-reverse">
@@ -18,11 +31,11 @@ const Home: React.FC = () => {
             className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 
                     focus:ring-blue-500 focus:border-transparent"
           />
-         <button className="text-blue hover:text-blue-100 transition-colors duration-300">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </button>
+          <button className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition-colors duration-300">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </button>
         </div>
       </div>
 
@@ -34,8 +47,6 @@ const Home: React.FC = () => {
                         transition-all duration-300 border border-gray-100 overflow-hidden">
             {/* قسم الصورة */}
             <div className="relative aspect-[4/3] overflow-hidden">
-
-
               {/* شارة المخزون */}
               {product.stock < 20 && (
                 <div className="absolute top-3 right-3 z-10">
@@ -126,20 +137,20 @@ const Home: React.FC = () => {
                       currency: 'SAR'
                     }).format(product.price)}
                   </span>
-
-                <div className="flex items-center gap-1">
-                  {product.stock <= 10 && (
-                    <>
-                      <span className="text-sm text-gray-500">المخزون:</span>
-                      <span className="text-sm font-medium text-red-600">
-                        {product.stock}
-                      </span>
-                    </>
-                  )}
-                </div>
+                  <div className="flex items-center gap-1">
+                    {product.stock <= 10 && (
+                      <>
+                        <span className="text-sm text-gray-500">المخزون:</span>
+                        <span className="text-sm font-medium text-red-600">
+                          {product.stock}
+                        </span>
+                      </>
+                    )}
+                  </div>
                 </div>
 
                 <button 
+                  onClick={() => handleAddToCart(product)}
                   className="bg-blue-600 text-white px-6 py-2.5 rounded-lg 
                            hover:bg-blue-700 active:scale-95 transition-all duration-300
                            flex items-center gap-2"
