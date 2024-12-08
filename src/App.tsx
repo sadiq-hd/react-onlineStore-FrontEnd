@@ -8,8 +8,8 @@ import ContactMe from './pages/contact-me/contact-me';
 import WhatsAppButton from './components/WhatsAppButton';
 import { CartProvider } from './context/CartContext';
 import Cart from './pages/Cart';
-import Register from './pages/register/Register';
-import Login from './pages/login/login';
+import Register from './pages/auth/Register';
+import Login from './pages/auth/login';
 
 const App: React.FC = () => {
   return (
