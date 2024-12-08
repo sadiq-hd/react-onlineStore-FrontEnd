@@ -9,7 +9,8 @@ import WhatsAppButton from './components/WhatsAppButton';
 import { CartProvider } from './context/CartContext';
 import Cart from './pages/Cart';
 import Register from './pages/register/Register';
-import Login from "./pages/login/login";
+import Login from './pages/login/login';
+
 const App: React.FC = () => {
   return (
     <CartProvider>
@@ -26,8 +27,9 @@ const App: React.FC = () => {
           <Route path="/about-us" element={<AboutUs />} />
           <Route path="/contact-me" element={<ContactMe />} />
           <Route path="/cart" element={<Cart />} />
+          <Route path="/Login" element={<Login />} />
+
           <Route path='/register' element={<Register/>} />
-          <Route path="/login" element={<Login />} />
           </Routes>
       </main>
 
