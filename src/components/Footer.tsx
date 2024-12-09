@@ -1,8 +1,11 @@
 import React from 'react';
 import.meta.glob('/src/assets/*')
 import madaSvg from '/src/assets/mada.svg'
-
-
+import applepaypng from '/src/assets/applepay.png'
+import googleplaySvg from '/src/assets/google-play.svg'
+import stcpaySvg from '/src/assets/stcpay.svg'
+import payWebp from '/src/assets/pay.webp'
+import samsungPaySvg from '/src/assets/SamsungPay.svg'
 const SocialIcon: React.FC<{ d: string }> = ({ d }) => (
   <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
     <path d={d} />
@@ -55,12 +58,11 @@ const Footer: React.FC = () => {
 
             <div className="flex flex-wrap gap-4">
             <img src={madaSvg} alt="mada" className="w-16 h-16 object-contain bg-white p-2 rounded-lg transition-transform hover:scale-110" />
-
-<img src="/src/assets/google-play.svg" alt="Google Pay" className="w-16 h-16 object-contain bg-white p-2 rounded-lg transition-transform hover:scale-110" />
-  <img src="/src/assets/stcpay.svg" alt="STC Pay" className="w-16 h-16 object-contain bg-white p-2 rounded-lg transition-transform hover:scale-110" />
-  <img src="/src/assets/applepay.png" alt="Apple Pay" className="w-16 h-16 object-contain bg-white p-2 rounded-lg transition-transform hover:scale-110" />
-  <img src="/src/assets/pay.webp" alt="Pay" className="w-16 h-16 object-contain bg-white p-2 rounded-lg transition-transform hover:scale-110" />
-  <img src="/src/assets/SamsungPay.svg" alt="Samsung Pay" className="w-16 h-16 object-contain bg-white p-2 rounded-lg transition-transform hover:scale-110" />
+  <img src={applepaypng} alt="apple pay" className="w-16 h-16 object-contain bg-white p-2 rounded-lg transition-transform hover:scale-110" />
+  <img src={googleplaySvg} alt="Google Pay" className="w-16 h-16 object-contain bg-white p-2 rounded-lg transition-transform hover:scale-110" />
+  <img src={stcpaySvg} alt="STC Pay" className="w-16 h-16 object-contain bg-white p-2 rounded-lg transition-transform hover:scale-110" />
+  <img src={payWebp} alt="Pay" className="w-16 h-16 object-contain bg-white p-2 rounded-lg transition-transform hover:scale-110" />
+  <img src={samsungPaySvg} alt="Samsung Pay" className="w-16 h-16 object-contain bg-white p-2 rounded-lg transition-transform hover:scale-110" />
 </div>
           </div>
           
