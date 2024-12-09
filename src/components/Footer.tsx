@@ -1,5 +1,6 @@
 import React from 'react';
 import.meta.glob('/src/assets/*')
+import madaSvg from '/src/assets/mada.svg'
 
 
 const SocialIcon: React.FC<{ d: string }> = ({ d }) => (
@@ -53,8 +54,9 @@ const Footer: React.FC = () => {
             <div className='mt-[12px] border-t-[0.2px] border-slate-50'></div>
 
             <div className="flex flex-wrap gap-4">
-  <img src="/src/assets/mada.svg" alt="mada" className="w-16 h-16 object-contain bg-white p-2 rounded-lg transition-transform hover:scale-110" />
-  <img src="/src/assets/google-play.svg" alt="Google Pay" className="w-16 h-16 object-contain bg-white p-2 rounded-lg transition-transform hover:scale-110" />
+            <img src={madaSvg} alt="mada" className="w-16 h-16 object-contain bg-white p-2 rounded-lg transition-transform hover:scale-110" />
+
+<img src="/src/assets/google-play.svg" alt="Google Pay" className="w-16 h-16 object-contain bg-white p-2 rounded-lg transition-transform hover:scale-110" />
   <img src="/src/assets/stcpay.svg" alt="STC Pay" className="w-16 h-16 object-contain bg-white p-2 rounded-lg transition-transform hover:scale-110" />
   <img src="/src/assets/applepay.png" alt="Apple Pay" className="w-16 h-16 object-contain bg-white p-2 rounded-lg transition-transform hover:scale-110" />
   <img src="/src/assets/pay.webp" alt="Pay" className="w-16 h-16 object-contain bg-white p-2 rounded-lg transition-transform hover:scale-110" />
@@ -69,7 +71,7 @@ const Footer: React.FC = () => {
         
         <div className="mt-12 pt-8 border-t border-gray-700 text-center">
           <p className="text-sm">&copy; 2025 متجر إلكتروني. جميع الحقوق محفوظة.</p>
-          <p className="text-sm mt-2">تم التصميم بواسطة صادق الدبيسي</p>
+          <p className="text-sm mt-2">Develov with love by Sadiq Aldubaisi</p>
         </div>
       </div>
     </footer>
