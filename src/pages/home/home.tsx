@@ -90,34 +90,33 @@ const Home: React.FC = () => {
       </div>
 
       {/* فلتر التصنيف */}
-      <div className="flex justify-center mb-8">
-        <div className="flex space-x-4 rtl:space-x-reverse">
-          <button
-            className={`px-4 py-2 rounded-lg transition-colors ${
-              selectedCategory === null
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
-            onClick={() => handleCategoryChange(null)}
-          >
-            الكل
-          </button>
-          {Array.from(new Set(dummyProducts.map(product => product.category))).map(category => (
-            <button
-              key={category}
-              className={`px-4 py-2 rounded-lg transition-colors ${
-                selectedCategory === category
-                  ? 'bg-blue-600 text-white hover:bg-blue-700'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-              onClick={() => handleCategoryChange(category)}
-            >
-              {category}
-            </button>
-          ))}
-        </div>
-      </div>
-
+      <div className="flex justify-center mb-8 px-4">
+  <div className="flex flex-wrap justify-center gap-2">
+    <button
+      className={`px-3 py-1.5 text-sm sm:px-4 sm:py-2 sm:text-base rounded-lg transition-colors ${
+        selectedCategory === null
+          ? 'bg-purple-600 text-white hover:bg-purple-700'
+          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+      }`}
+      onClick={() => handleCategoryChange(null)}
+    >
+      الكل
+    </button>
+    {Array.from(new Set(dummyProducts.map(product => product.category))).map(category => (
+      <button
+        key={category}
+        className={`px-3 py-1.5 text-sm sm:px-4 sm:py-2 sm:text-base rounded-lg transition-colors ${
+          selectedCategory === category
+            ? 'bg-purple-600 text-white hover:bg-purple-700'
+            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+        }`}
+        onClick={() => handleCategoryChange(category)}
+      >
+        {category}
+      </button>
+    ))}
+  </div>
+</div>
       {/* شبكة المنتجات */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {filteredProducts.map((product) => (

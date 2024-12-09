@@ -14,6 +14,7 @@ import Profile from './pages/profile/Profile';
 import Favorites from './pages/Favorites/Favorites';
 import { FavoritesProvider } from './context/FavoritesContext';
 import FAQs from './pages/FAQs';
+import Footer from './components/Footer';
 
 const App: React.FC = () => {
   return (
@@ -38,11 +39,12 @@ const App: React.FC = () => {
           <Route path='/profile' element = {<Profile/>} /> 
           <Route path="/favorites" element={<Favorites />} />
           <Route path="/FAQs" element={<FAQs />} />
+          <Route path="/Footer" element={<Footer />} />
 
           
           </Routes>
       </main>
-
+      <Footer />
       <WhatsAppButton />
     </div>
     </FavoritesProvider>

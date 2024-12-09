@@ -4,7 +4,7 @@ const AboutUs: React.FC = () => {
   return (
     <div className="min-h-screen rtl bg-gradient-to-b from-blue-50 to-white">
       {/* Hero Section */}
-      <div className="relative overflow-hidden bg-blue-600 text-white">
+      <div className="relative overflow-hidden bg-purple-600 text-white">
         <div className="absolute inset-0 bg-[url('/src/assets/pattern.png')] opacity-10"></div>
         <div className="container mx-auto px-4 py-24 relative">
           <div className="max-w-3xl mx-auto text-center">
@@ -75,19 +75,19 @@ const AboutUs: React.FC = () => {
       <div className="container mx-auto px-4 py-16">
         <div className="grid md:grid-cols-4 gap-8 text-center">
           <div className="space-y-2">
-            <div className="text-4xl font-bold text-blue-600">+10K</div>
+            <div className="text-4xl font-bold text-purple-600">+10K</div>
             <div className="text-gray-600">عميل سعيد</div>
           </div>
           <div className="space-y-2">
-            <div className="text-4xl font-bold text-blue-600">+5K</div>
+            <div className="text-4xl font-bold text-purple-600">+5K</div>
             <div className="text-gray-600">منتج متنوع</div>
           </div>
           <div className="space-y-2">
-            <div className="text-4xl font-bold text-blue-600">%99</div>
+            <div className="text-4xl font-bold text-purple-600">%99</div>
             <div className="text-gray-600">رضا العملاء</div>
           </div>
           <div className="space-y-2">
-            <div className="text-4xl font-bold text-blue-600">24/7</div>
+            <div className="text-4xl font-bold text-purple-600">24/7</div>
             <div className="text-gray-600">دعم العملاء</div>
           </div>
         </div>

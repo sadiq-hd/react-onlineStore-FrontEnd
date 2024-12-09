@@ -23,7 +23,7 @@ const Header: React.FC = () => {
   };
 
   return (
-    <nav className="bg-gradient-to-r from-blue-600 to-blue-500 sticky top-0 z-50">
+    <nav className="bg-gradient-to-r from-purple-600 to-purple-500 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex justify-between items-center h-20">
           {/* Logo Section */}
@@ -188,18 +188,18 @@ const Header: React.FC = () => {
         {/* Mobile Menu */}
         {isMenuOpen && (
           <div className="md:hidden py-3 border-t border-blue-400">
-            <Link to="/" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-blue-500">الرئيسية</Link>
-            <Link to="/FAQs" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-blue-500">الاسالة الشائعة</Link>
-            <Link to="/about-us" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-blue-500">من نحن</Link>
-            <Link to="/contact-me" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-blue-500">اتصل بنا</Link>
+            <Link to="/" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">الرئيسية</Link>
+            <Link to="/FAQs" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">الاسالة الشائعة</Link>
+            <Link to="/about-us" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">من نحن</Link>
+            <Link to="/contact-me" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">اتصل بنا</Link>
             <hr className="my-2 border-blue-400" />
             {currentUser ? (
               <>
                 <div className="py-2.5 text-white text-center">مرحباً، {currentUser.name}</div>
-                <Link to="/profile" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-blue-500">الملف الشخصي</Link>
-                <Link to="/orders" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-blue-500">طلباتي</Link>
+                <Link to="/profile" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">الملف الشخصي</Link>
+                <Link to="/orders" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">طلباتي</Link>
                 {currentUser.role === 'admin' && (
-                  <Link to="/admin-dashboard" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-blue-500">
+                  <Link to="/admin-dashboard" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">
                     لوحة التحكم
                   </Link>
                 )}
@@ -208,15 +208,15 @@ const Header: React.FC = () => {
                     handleLogout();
                     closeMenus();
                   }}
-                  className="w-full py-2.5 text-white text-center hover:bg-blue-500"
+                  className="w-full py-2.5 text-white text-center hover:bg-purple-500"
                 >
                   تسجيل الخروج
                 </button>
               </>
             ) : (
               <>
-                <Link to="/signin" onClick={closeMenus}  className="block py-2.5 text-white text-center hover:bg-blue-500">تسجيل الدخول</Link>
-                <Link to="/register" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-blue-500">إنشاء حساب</Link>
+                <Link to="/signin" onClick={closeMenus}  className="block py-2.5 text-white text-center hover:bg-purple-500">تسجيل الدخول</Link>
+                <Link to="/register" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">إنشاء حساب</Link>
               </>
             )}
           </div>
