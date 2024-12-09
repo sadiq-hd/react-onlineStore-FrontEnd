@@ -77,7 +77,7 @@ const Register: React.FC = () => {
     if (validateForm()) {
       // هنا يمكنك إضافة منطق التسجيل الحقيقي
       console.log('Form submitted:', formData);
-      navigate('/signin');
+      navigate('/');
     }
   };
 
@@ -90,7 +90,7 @@ const Register: React.FC = () => {
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             لديك حساب بالفعل؟{' '}
-            <a href="/login" className="font-medium text-blue-600 hover:text-blue-500">
+            <a href="/signin" className="font-medium text-blue-600 hover:text-blue-500">
               تسجيل الدخول
             </a>
           </p>
