@@ -215,7 +215,7 @@ const Header: React.FC = () => {
               </>
             ) : (
               <>
-                <Link to="/login" onClick={closeMenus}  className="block py-2.5 text-white text-center hover:bg-blue-500">تسجيل الدخول</Link>
+                <Link to="/signin" onClick={closeMenus}  className="block py-2.5 text-white text-center hover:bg-blue-500">تسجيل الدخول</Link>
                 <Link to="/register" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-blue-500">إنشاء حساب</Link>
               </>
             )}
