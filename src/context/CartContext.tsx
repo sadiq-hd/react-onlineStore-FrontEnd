@@ -2,6 +2,7 @@ import React, { createContext, useContext, useReducer } from 'react';
 
 interface CartItem {
   id: number;
+  category: string;
   name: string;
   price: number;
   image: string;

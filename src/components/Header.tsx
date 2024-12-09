@@ -47,12 +47,12 @@ const Header: React.FC = () => {
                 الرئيسية
               </Link>
               <Link 
-                to="/products"
+                to="/FAQs"
                 className={`text-white text-base font-medium transition-all duration-300 border-b-2 
-                          ${isActive('/products') ? 'border-white' : 'border-transparent hover:border-white/50'} 
+                          ${isActive('/FAQs') ? 'border-white' : 'border-transparent hover:border-white/50'} 
                           py-2 px-1`}
               >
-                المنتجات
+                الاسالة الشائعة
               </Link>
               <Link 
                 to="/about-us"
@@ -189,7 +189,7 @@ const Header: React.FC = () => {
         {isMenuOpen && (
           <div className="md:hidden py-3 border-t border-blue-400">
             <Link to="/" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-blue-500">الرئيسية</Link>
-            <Link to="/products" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-blue-500">المنتجات</Link>
+            <Link to="/FAQs" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-blue-500">الاسالة الشائعة</Link>
             <Link to="/about-us" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-blue-500">من نحن</Link>
             <Link to="/contact-me" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-blue-500">اتصل بنا</Link>
             <hr className="my-2 border-blue-400" />

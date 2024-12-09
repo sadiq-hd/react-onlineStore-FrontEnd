@@ -30,6 +30,7 @@ export const useProducts = () => {
 export const dummyProducts: Product[] = [
     {
       id: 1,
+      category: "سماعات",
       name: "سماعات لاسلكية",
       price: 299.99,
       stock: 3,
@@ -42,6 +43,7 @@ export const dummyProducts: Product[] = [
     },
     {
       id: 2,
+      category: "ساعات",
       name: "ساعة ذكية",
       price: 599.99,
       stock: 30,
@@ -54,6 +56,7 @@ export const dummyProducts: Product[] = [
     },
     {
       id: 3,
+      category: "حقائب",
       name: "حقيبة لابتوب",
       price: 199.99,
       stock: 100,
@@ -66,6 +69,7 @@ export const dummyProducts: Product[] = [
     },
     {
       id: 4,
+      category: "شواحن",
       name: "شاحن متنقل",
       price: 149.99,
       stock: 75,
@@ -78,6 +82,7 @@ export const dummyProducts: Product[] = [
     },
     {
       id: 5,
+      category: "مستلزمات الكمبيوتر",
       name: "كيبورد ميكانيكي",
       price: 399.99,
       stock: 45,
@@ -90,6 +95,7 @@ export const dummyProducts: Product[] = [
     },
     {
       id: 6,
+      category: "مستلزمات الكمبيوتر",
       name: "ماوس للألعاب",
       price: 249.99,
       stock: 60,
@@ -102,6 +108,8 @@ export const dummyProducts: Product[] = [
     },
     {
       id: 7,
+      category: "مستلزمات الكمبيوتر",
+
       name: "مكبر صوت بلوتوث",
       price: 179.99,
       stock: 85,
@@ -113,3 +121,4 @@ export const dummyProducts: Product[] = [
       description: "سماعة بلوتوث محمولة مع صوت ستيريو قوي"
     }
   ];
+
