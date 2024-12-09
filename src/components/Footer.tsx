@@ -1,4 +1,6 @@
 import React from 'react';
+import.meta.glob('/src/assets/*')
+
 
 const SocialIcon: React.FC<{ d: string }> = ({ d }) => (
   <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
@@ -51,10 +53,13 @@ const Footer: React.FC = () => {
             <div className='mt-[12px] border-t-[0.2px] border-slate-50'></div>
 
             <div className="flex flex-wrap gap-4">
-              {['mada', 'googlepay', 'stcpay', 'applepay', 'pay' , 'SamsungPay'].map((pay) => (
-                <img key={pay}src={`/assets/${pay}.${pay === 'applepay' ? 'png' : pay === 'pay' ? 'webp' : 'svg'}`}  alt={pay} className="w-16 h-16 object-contain bg-white p-2 rounded-lg transition-transform hover:scale-110" />
-              ))}
-            </div>
+  <img src="/src/assets/mada.svg" alt="mada" className="w-16 h-16 object-contain bg-white p-2 rounded-lg transition-transform hover:scale-110" />
+  <img src="/src/assets/google-play.svg" alt="Google Pay" className="w-16 h-16 object-contain bg-white p-2 rounded-lg transition-transform hover:scale-110" />
+  <img src="/src/assets/stcpay.svg" alt="STC Pay" className="w-16 h-16 object-contain bg-white p-2 rounded-lg transition-transform hover:scale-110" />
+  <img src="/src/assets/applepay.png" alt="Apple Pay" className="w-16 h-16 object-contain bg-white p-2 rounded-lg transition-transform hover:scale-110" />
+  <img src="/src/assets/pay.webp" alt="Pay" className="w-16 h-16 object-contain bg-white p-2 rounded-lg transition-transform hover:scale-110" />
+  <img src="/src/assets/SamsungPay.svg" alt="Samsung Pay" className="w-16 h-16 object-contain bg-white p-2 rounded-lg transition-transform hover:scale-110" />
+</div>
           </div>
           
 
