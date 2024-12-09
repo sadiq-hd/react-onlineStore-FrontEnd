@@ -10,10 +10,14 @@ import { CartProvider } from './context/CartContext';
 import Cart from './pages/Cart';
 import Register from './pages/auth/Register';
 import Signin from './pages/auth/Signin';
+import Profile from './pages/profile/Profile';
+import Favorites from './pages/Favorites/Favorites';
+import { FavoritesProvider } from './context/FavoritesContext';
 
 const App: React.FC = () => {
   return (
     <CartProvider>
+      <FavoritesProvider>
 
     <div dir="rtl" className="font-sans">
       <Header />
@@ -30,12 +34,16 @@ const App: React.FC = () => {
 
           <Route path='/register' element={<Register/>} />
           <Route path='/signin' element={<Signin/>} />
+          <Route path='/profile' element = {<Profile/>} /> 
+          <Route path="/favorites" element={<Favorites />} />
 
           </Routes>
       </main>
 
       <WhatsAppButton />
     </div>
+    </FavoritesProvider>
+
     </CartProvider>
 
   );
