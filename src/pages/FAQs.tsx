@@ -45,8 +45,8 @@ const FAQ: React.FC = () => {
           <p className="text-lg text-gray-700 mb-8">
             فريق الدعم الخاص بنا متاح دائمًا للإجابة على جميع استفساراتك.
           </p>
-          <button onClick={() => window.location.href = '/contact-me'} className="px-6 py-3 bg-purple-600 text-white rounded-xl shadow-md hover:bg-purple-700 transition">
-            تواصل معنا
+          <button className="px-6 py-3 bg-purple-600 text-white rounded-xl shadow-md hover:bg-purple-700 transition">
+          <Link to="/contact-me">تواصل معنا </Link>
           </button>
         </div>
       </div>
