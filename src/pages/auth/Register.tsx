@@ -77,7 +77,7 @@ const Register: React.FC = () => {
     if (validateForm()) {
       // هنا يمكنك إضافة منطق التسجيل الحقيقي
       console.log('Form submitted:', formData);
-      navigate('/Login');
+      navigate('/signin');
     }
   };
 
