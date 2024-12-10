@@ -1,5 +1,4 @@
 import { useState, type FC, ChangeEvent } from 'react';
-import { useProducts } from '../typerScript/useProducts';
 import { 
   LineChart, 
   Line, 
@@ -154,7 +153,6 @@ const topProducts: TopProduct[] = [
 
 const AdminDashboard: FC = () => {
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const productsData = useProducts();
 
   // استخدام البيانات التجريبية مؤقتاً
   const products = dummyProducts;
