@@ -118,12 +118,12 @@ const Header: React.FC = () => {
                       <Link to="/profile" onClick={closeMenus} className="block px-4 py-2 text-gray-800 hover:bg-gray-100">
                         الملف الشخصي
                       </Link>
-                      <Link to="/orders" onClick={closeMenus} className="block px-4 py-2 text-gray-800 hover:bg-gray-100">
-                        طلباتي
-                      </Link>
-                      <Link to="/favorites" onClick={closeMenus}  className="block px-4 py-2 text-gray-800 hover:bg-gray-100">
-                        المفضلة
-                      </Link>
+
+{currentUser.role === 'user' && (
+  <Link to="/favorites" onClick={closeMenus} className="block px-4 py-2 text-gray-800 hover:bg-gray-100">
+    المفضلة
+  </Link>
+)}
                       {currentUser.role === 'admin' && (
                         <Link to="/AdminDashboard" onClick={closeMenus}  className="block px-4 py-2 text-gray-800 hover:bg-gray-100">
                           لوحة التحكم
@@ -205,7 +205,7 @@ const Header: React.FC = () => {
               <>
                 <div className="py-2.5 text-white text-center">مرحباً، {currentUser.name}</div>
                 <Link to="/profile" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">الملف الشخصي</Link>
-                <Link to="/orders" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">طلباتي</Link>
+              
                 {currentUser.role === 'admin' && (
                   <Link to="/AdminDashboard" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">
                     لوحة التحكم

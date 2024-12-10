@@ -5,7 +5,7 @@ import {
   Tooltip, ResponsiveContainer, BarChart, Bar 
 } from 'recharts';
 import { 
-  Search, Package, Users, DollarSign, Archive 
+  Search, Package, Users, Archive 
 } from 'lucide-react';
 
 const AdminDashboard: FC = () => {
@@ -17,9 +17,16 @@ const AdminDashboard: FC = () => {
     stockStatus,
     topCustomers,
     topProducts,
-    salesData
-  } = useDashboard();
+    salesData,
+    profitCalculations
 
+  } = useDashboard();
+  console.log('Dashboard Data:', {
+    filteredProducts,
+    topCustomers,
+    topProducts,
+    salesData
+  });
   return (
     <div className="p-6 bg-gray-50 min-h-screen" dir="rtl">
       <h1 className="text-3xl font-bold mb-8 text-purple-600">لوحة التحكم</h1>
@@ -51,16 +58,31 @@ const AdminDashboard: FC = () => {
         </div>
 
         <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="bg-purple-100 p-3 rounded-full">
-              <DollarSign className="h-8 w-8 text-purple-600" />
-            </div>
-            <div className="mr-4">
-              <p className="text-sm text-gray-500">قيمة المخزون</p>
-              <h3 className="text-2xl font-bold">ر.س.{calculations.totalValue.toFixed(2)}</h3>
-            </div>
-          </div>
-        </div>
+  <div className="flex items-center">
+    <div className="bg-purple-100 p-3 rounded-full">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="h-8 w-8 text-purple-600"
+      >
+        <text x="50%" y="50%" dominantBaseline="middle" textAnchor="middle" fontSize="14" fontWeight="bold">
+          ﷼
+        </text>
+      </svg>
+    </div>
+    <div className="mr-4">
+      <p className="text-sm text-gray-500">قيمة المخزون</p>
+      <h3 className="text-2xl font-bold">
+        {new Intl.NumberFormat('ar-SA', { style: 'currency', currency: 'SAR' }).format(calculations.totalValue)}
+      </h3>
+    </div>
+  </div>
+</div>
 
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
@@ -117,6 +139,65 @@ const AdminDashboard: FC = () => {
           </div>
         </div>
       </div>
+
+       {/* الربح الإجمالي */}
+       <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <div className="bg-green-100 p-3 rounded-full">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-8 w-8 text-green-600"
+              >
+                <path d="M12 20V10M18 20V4M6 20v-4" />
+              </svg>
+            </div>
+            <div className="mr-4">
+              <p className="text-sm text-gray-500">الربح الإجمالي</p>
+              <h3 className="text-2xl font-bold text-green-600">
+                {new Intl.NumberFormat('ar-SA', { 
+                  style: 'currency', 
+                  currency: 'SAR' 
+                }).format(profitCalculations.totalProfit)}
+              </h3>
+            </div>
+          </div>
+        </div>
+
+        {/* الربح الصافي */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <div className="bg-green-100 p-3 rounded-full">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-8 w-8 text-green-600"
+              >
+                <path d="M2 20h.01M7 20v-4M12 20v-8M17 20V8M22 4v16" />
+              </svg>
+            </div>
+            <div className="mr-4">
+              <p className="text-sm text-gray-500">الربح الصافي</p>
+              <h3 className="text-2xl font-bold text-green-600">
+                {new Intl.NumberFormat('ar-SA', { 
+                  style: 'currency', 
+                  currency: 'SAR' 
+                }).format(profitCalculations.netProfit)}
+              </h3>
+            </div>
+          </div>
+        </div>
+
 
       {/* العملاء الأكثر شراءً */}
       <div className="bg-white rounded-lg shadow mb-8">
