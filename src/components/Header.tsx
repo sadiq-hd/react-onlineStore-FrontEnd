@@ -206,7 +206,7 @@ const Header: React.FC = () => {
                 <Link to="/profile" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">الملف الشخصي</Link>
                 <Link to="/orders" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">طلباتي</Link>
                 {currentUser.role === 'admin' && (
-                  <Link to="/admin-dashboard" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">
+                  <Link to="/AdminDashboard" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">
                     لوحة التحكم
                   </Link>
                 )}
