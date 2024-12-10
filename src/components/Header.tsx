@@ -141,6 +141,7 @@ const Header: React.FC = () => {
                             handleLogout();
                             closeMenus();
                           }}
+                          
                         className="w-full text-right px-4 py-2 text-red-600 hover:bg-gray-100"
                       >
                         تسجيل الخروج

@@ -1,31 +1,8 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { dummyUsers } from '../../typerScript/dummyUsers';
 
-interface User {
- id: number;
- email: string;
- password: string;
- name: string;
- role: 'admin' | 'user';
-}
-
-const dummyUsers: User[] = [
- {
-   id: 1,
-   email: 'admin@example.com',
-   password: 'admin123',
-   name: 'المدير',
-   role: 'admin'
- },
- {
-   id: 2,
-   email: 'user@example.com',
-   password: 'user123',
-   name: 'مستخدم',
-   role: 'user'
- }
-];
 
 const Signin: React.FC = () => {
  const navigate = useNavigate();

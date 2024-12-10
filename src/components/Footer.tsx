@@ -2,7 +2,6 @@ import React from 'react';
 import.meta.glob('/src/assets/*')
 import madaSvg from '/src/assets/mada.svg'
 import applepaypng from '/src/assets/applepay.png'
-import googleplaySvg from '/src/assets/google-play.svg'
 import stcpaySvg from '/src/assets/stcpay.svg'
 import payWebp from '/src/assets/pay.webp'
 import samsungPaySvg from '/src/assets/SamsungPay.svg'
@@ -59,7 +58,6 @@ const Footer: React.FC = () => {
             <div className="flex flex-wrap gap-4">
             <img src={madaSvg} alt="mada" className="w-16 h-16 object-contain bg-white p-2 rounded-lg transition-transform hover:scale-110" />
   <img src={applepaypng} alt="apple pay" className="w-16 h-16 object-contain bg-white p-2 rounded-lg transition-transform hover:scale-110" />
-  <img src={googleplaySvg} alt="Google Pay" className="w-16 h-16 object-contain bg-white p-2 rounded-lg transition-transform hover:scale-110" />
   <img src={stcpaySvg} alt="STC Pay" className="w-16 h-16 object-contain bg-white p-2 rounded-lg transition-transform hover:scale-110" />
   <img src={payWebp} alt="Pay" className="w-16 h-16 object-contain bg-white p-2 rounded-lg transition-transform hover:scale-110" />
   <img src={samsungPaySvg} alt="Samsung Pay" className="w-16 h-16 object-contain bg-white p-2 rounded-lg transition-transform hover:scale-110" />

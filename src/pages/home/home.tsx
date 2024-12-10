@@ -1,81 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useProducts } from '../../typerScript/useProducts';
-import { dummyProducts } from '../../typerScript/useProducts';
-import { Product } from '../../types/product';
-import { useCart, CartItem } from '../../context/CartContext';
-import { useFavorites } from '../../context/FavoritesContext';
+import React from 'react';
+import { useHome } from '../../typerScript/useHome';
 
 const Home: React.FC = () => {
-  const navigate = useNavigate();
-  const { currentImageIndex, nextImage, prevImage, setCurrentImageIndex } = useProducts();
-  const { state, dispatch } = useCart(); // تغيير هنا
-  const { state: favoritesState, dispatch: favoritesDispatch } = useFavorites();
-  const [favorites, setFavorites] = useState<number[]>([]);
-  const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  useEffect(() => {
-    setFavorites(favoritesState.items.map(item => item.id));
-  }, [favoritesState.items]);
+  const {
+    currentImageIndex,
+    nextImage,
+    prevImage,
+    setCurrentImageIndex,
+    favorites,
+    selectedCategory,
+    handleFavorite,
+    handleAddToCart,
+    isProductAvailable,
+    handleCategoryChange,
+    filteredProducts,
+    uniqueCategories
+  } = useHome();
 
-  const handleFavorite = (product: Product) => {
-    const isLoggedIn = !!currentUser;
-    
-    if (!isLoggedIn) {
-      navigate('/favorites');
-      return;
-    }
-
-    const isFavorite = favorites.includes(product.id);
-    
-    if (isFavorite) {
-      favoritesDispatch({ type: 'REMOVE_FAVORITE', payload: product.id });
-      setFavorites(prev => prev.filter(id => id !== product.id));
-    } else {
-      favoritesDispatch({ 
-        type: 'ADD_FAVORITE', 
-        payload: {
-          id: product.id,
-          name: product.name,
-          price: product.price,
-          image: product.images[currentImageIndex[product.id] || 0],
-          userId: currentUser?.id
-        } 
-      });
-      setFavorites(prev => [...prev, product.id]);
-    }
-  };
-
-  const handleAddToCart = (product: Product) => {
-    dispatch({
-      type: 'ADD_ITEM',
-      payload: {
-        id: product.id,
-        category: product.category,
-        name: product.name,
-        price: product.price,
-        image: product.images[currentImageIndex[product.id] || 0],
-        quantity: 1
-      }
-    });
-  };
-
-
-  const isProductAvailable = (product: Product): boolean => {
-    if (product.stock <= 0) return false;
-    const cartItem = state.items.find((item: CartItem) => item.id === product.id); // تغيير هنا
-    const cartQuantity = cartItem ? cartItem.quantity : 0;
-    return cartQuantity < product.stock;
-  };
-
-
-  const filteredProducts = selectedCategory
-    ? dummyProducts.filter(product => product.category === selectedCategory)
-    : dummyProducts;
-
-  const handleCategoryChange = (category: string | null) => {
-    setSelectedCategory(category);
-  };
   return (
     <div className="container mx-auto px-4 py-8 rtl">
       {/* شريط البحث */}
@@ -84,8 +25,7 @@ const Home: React.FC = () => {
           <input
             type="text"
             placeholder="ابحث هنا..."
-            className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 
-                    focus:ring-blue-500 focus:border-transparent"
+            className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
           <button className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition-colors duration-300">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -97,32 +37,34 @@ const Home: React.FC = () => {
 
       {/* فلتر التصنيف */}
       <div className="flex justify-center mb-8 px-4">
-  <div className="flex flex-wrap justify-center gap-2">
-    <button
-      className={`px-3 py-1.5 text-sm sm:px-4 sm:py-2 sm:text-base rounded-lg transition-colors ${
-        selectedCategory === null
-          ? 'bg-purple-600 text-white hover:bg-purple-700'
-          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-      }`}
-      onClick={() => handleCategoryChange(null)}
-    >
-      الكل
-    </button>
-    {Array.from(new Set(dummyProducts.map(product => product.category))).map(category => (
-      <button
-        key={category}
-        className={`px-3 py-1.5 text-sm sm:px-4 sm:py-2 sm:text-base rounded-lg transition-colors ${
-          selectedCategory === category
-            ? 'bg-purple-600 text-white hover:bg-purple-700'
-            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-        }`}
-        onClick={() => handleCategoryChange(category)}
-      >
-        {category}
-      </button>
-    ))}
-  </div>
-</div>
+        <div className="flex flex-wrap justify-center gap-2">
+          <button
+            className={`px-3 py-1.5 text-sm sm:px-4 sm:py-2 sm:text-base rounded-lg transition-colors ${
+              selectedCategory === null
+                ? 'bg-purple-600 text-white hover:bg-purple-700'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+            onClick={() => handleCategoryChange(null)}
+          >
+            الكل
+          </button>
+          {uniqueCategories.map(category => (
+            <button
+              key={category}
+              className={`px-3 py-1.5 text-sm sm:px-4 sm:py-2 sm:text-base rounded-lg transition-colors ${
+                selectedCategory === category
+                  ? 'bg-purple-600 text-white hover:bg-purple-700'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+              onClick={() => handleCategoryChange(category)}
+            >
+              {category}
+            </button>
+          ))}
+        </div>
+      </div>
+
+
 {/* شبكة المنتجات */}
 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
   {filteredProducts.map((product) => (
