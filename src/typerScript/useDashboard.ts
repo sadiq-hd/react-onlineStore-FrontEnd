@@ -142,7 +142,7 @@ export const useDashboard = () => {
     totalValue: products.reduce((acc, curr) => acc + (curr.price * curr.stock), 0),
     // الربح الإجمالي (قيمة المخزون)
     totalProfit: products.reduce((acc, curr) => acc + (curr.price * curr.stock), 0),
-    // الربح الصافي (10% من قيمة كل منتج)
+    // الربح الصافي (15% من قيمة كل منتج)
     netProfit: products.reduce((acc, curr) => acc + ((curr.price * 0.15) * curr.stock), 0),
   };
   const stockStatus = (stock: number) => {
