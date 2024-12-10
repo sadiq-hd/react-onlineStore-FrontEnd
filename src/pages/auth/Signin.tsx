@@ -52,7 +52,7 @@ const Signin: React.FC = () => {
    if (user) {
      localStorage.setItem('currentUser', JSON.stringify(user));
      if (user.role === 'admin') {
-       navigate('/admin-dashboard');
+       navigate('/AdminDashboard');
      } else {
        navigate('/');
      }

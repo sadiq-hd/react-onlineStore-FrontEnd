@@ -15,6 +15,7 @@ import Favorites from './pages/Favorites/Favorites';
 import { FavoritesProvider } from './context/FavoritesContext';
 import FAQs from './pages/FAQs';
 import Footer from './components/Footer';
+import AdminDashboard from './pages/AdminDashboard';
 
 const App: React.FC = () => {
   return (
@@ -40,8 +41,8 @@ const App: React.FC = () => {
           <Route path="/favorites" element={<Favorites />} />
           <Route path="/FAQs" element={<FAQs />} />
           <Route path="/Footer" element={<Footer />} />
+          <Route path="/AdminDashboard" element={<AdminDashboard />} />
 
-          
           </Routes>
       </main>
       <Footer />

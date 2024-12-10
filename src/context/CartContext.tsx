@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer } from 'react';
 
-interface CartItem {
+export interface CartItem {
   id: number;
   category: string;
   name: string;
@@ -19,7 +19,7 @@ type CartAction =
   | { type: 'REMOVE_ITEM'; payload: number }
   | { type: 'UPDATE_QUANTITY'; payload: { id: number; quantity: number } };
 
-const CartContext = createContext<{
+export const CartContext = createContext<{
   state: CartState;
   dispatch: React.Dispatch<CartAction>;
 } | undefined>(undefined);

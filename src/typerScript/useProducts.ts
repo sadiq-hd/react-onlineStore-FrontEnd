@@ -72,7 +72,7 @@ export const dummyProducts: Product[] = [
       category: "شواحن",
       name: "شاحن متنقل",
       price: 149.99,
-      stock: 75,
+      stock: 0,
       images: [
         "https://images.unsplash.com/photo-1609091839311-d5365f9ff1c5?w=500",
         "https://images.unsplash.com/photo-1585338647529-03d363fe9ace?w=500",

@@ -125,9 +125,16 @@ const Header: React.FC = () => {
                         المفضلة
                       </Link>
                       {currentUser.role === 'admin' && (
-                        <Link to="/admin-dashboard" onClick={closeMenus}  className="block px-4 py-2 text-gray-800 hover:bg-gray-100">
+                        <Link to="/AdminDashboard" onClick={closeMenus}  className="block px-4 py-2 text-gray-800 hover:bg-gray-100">
                           لوحة التحكم
                         </Link>
+                        
+                      )}
+                         {currentUser.role === 'admin' && (
+                        <Link to="/AdminDashboard" onClick={closeMenus}  className="block px-4 py-2 text-gray-800 hover:bg-gray-100">
+                         طلبات الشراء
+                        </Link>
+                        
                       )}
                       <button 
                         onClick={() => {

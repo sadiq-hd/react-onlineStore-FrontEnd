@@ -3,19 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import { useProducts } from '../../typerScript/useProducts';
 import { dummyProducts } from '../../typerScript/useProducts';
 import { Product } from '../../types/product';
-import { useCart } from '../../context/CartContext';
+import { useCart, CartItem } from '../../context/CartContext';
 import { useFavorites } from '../../context/FavoritesContext';
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
   const { currentImageIndex, nextImage, prevImage, setCurrentImageIndex } = useProducts();
-  const { dispatch } = useCart();
+  const { state, dispatch } = useCart(); // تغيير هنا
   const { state: favoritesState, dispatch: favoritesDispatch } = useFavorites();
   const [favorites, setFavorites] = useState<number[]>([]);
   const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-
-  
   useEffect(() => {
     setFavorites(favoritesState.items.map(item => item.id));
   }, [favoritesState.items]);
@@ -62,14 +60,22 @@ const Home: React.FC = () => {
     });
   };
 
+
+  const isProductAvailable = (product: Product): boolean => {
+    if (product.stock <= 0) return false;
+    const cartItem = state.items.find((item: CartItem) => item.id === product.id); // تغيير هنا
+    const cartQuantity = cartItem ? cartItem.quantity : 0;
+    return cartQuantity < product.stock;
+  };
+
+
   const filteredProducts = selectedCategory
     ? dummyProducts.filter(product => product.category === selectedCategory)
     : dummyProducts;
 
-    const handleCategoryChange = (category: string | null) => {
-      setSelectedCategory(category);
-    };
-
+  const handleCategoryChange = (category: string | null) => {
+    setSelectedCategory(category);
+  };
   return (
     <div className="container mx-auto px-4 py-8 rtl">
       {/* شريط البحث */}
@@ -117,22 +123,30 @@ const Home: React.FC = () => {
     ))}
   </div>
 </div>
-      {/* شبكة المنتجات */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filteredProducts.map((product) => (
-          <div key={product.id} 
-               className="group bg-white rounded-2xl shadow-sm hover:shadow-xl 
-                        transition-all duration-300 border border-gray-100 overflow-hidden">
-            {/* قسم الصورة */}
-            <div className="relative aspect-[4/3] overflow-hidden">
-              {/* شارة المخزون */}
-              {product.stock < 20 && (
-                <div className="absolute top-3 right-3 z-10">
-                  <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
-                    كمية محدودة
-                  </span>
-                </div>
-              )}
+{/* شبكة المنتجات */}
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+  {filteredProducts.map((product) => (
+    <div key={product.id} 
+         className="group bg-white rounded-2xl shadow-sm hover:shadow-xl 
+                  transition-all duration-300 border border-gray-100 overflow-hidden">
+      {/* قسم الصورة */}
+      <div className="relative aspect-[4/3] overflow-hidden">
+        {/* شارة المخزون */}
+        <div className="absolute top-3 right-3 z-10">
+          {product.stock > 10 ? (
+            <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full">
+              متوفر
+            </span>
+          ) : product.stock > 0 ? (
+            <span className="bg-yellow-500 text-white text-xs px-2 py-1 rounded-full">
+              كمية محدودة
+            </span>
+          ) : (
+            <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+              نفذ المخزون
+            </span>
+          )}
+        </div>
               
               <img 
                 src={product.images[currentImageIndex[product.id] || 0]}
@@ -240,18 +254,22 @@ const Home: React.FC = () => {
                 </div>
 
                 <button 
-                  onClick={() => handleAddToCart(product)}
-                  className="bg-blue-600 text-white px-6 py-2.5 rounded-lg 
-                           hover:bg-blue-700 active:scale-95 transition-all duration-300
-                           flex items-center gap-2"
+                  onClick={() => isProductAvailable(product) && handleAddToCart(product)}
+                  className={`px-6 py-2.5 rounded-lg transition-all duration-300
+                              flex items-center gap-2
+                              ${isProductAvailable(product)
+                                ? 'bg-blue-600 text-white hover:bg-blue-700 active:scale-95'
+                                : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}
+                  disabled={!isProductAvailable(product)}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" 
                        fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
                           d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                   </svg>
-                  إضافة للسلة
+                  {isProductAvailable(product) ? 'إضافة للسلة' : 'غير متوفر'}
                 </button>
+
               </div>
             </div>
           </div>
