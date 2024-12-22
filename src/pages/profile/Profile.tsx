@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useFavorites } from '../../context/FavoritesContext';
+import {  useNavigate } from 'react-router-dom';
 
 interface OrderType {
  id: string;
@@ -13,9 +14,15 @@ const Profile: React.FC = () => {
  const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
  const [activeTab, setActiveTab] = useState('profile');
  const { state: favoritesState, dispatch: favoritesDispatch } = useFavorites();
-
+ const Navigate = useNavigate();
  if (!currentUser) {
-   return <div>يرجى تسجيل الدخول</div>;
+   return (
+     <div className="flex justify-center items-center h-screen bg-gray-100">
+       <div className="bg-white p-8 rounded-lg shadow-md text-center">
+         <p className="text-xl text-gray-700">يرجى تسجيل الدخول</p>
+       </div>
+     </div>
+   );
  }
 
  const dummyOrders: OrderType[] = [
@@ -57,188 +64,196 @@ const Profile: React.FC = () => {
   }
  ];
 
- return (
-   <div className="container mx-auto p-4">
-     <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-       {/* Sidebar */}
-       <div className="md:col-span-1">
-         <div className="bg-white rounded-lg shadow p-4">
-           <div className="text-center mb-4">
-             <div className="w-20 h-20 mx-auto bg-gray-200 rounded-full flex items-center justify-center mb-2">
-               <span className="text-2xl">{currentUser.name[0]}</span>
-             </div>
-             <h2 className="font-bold text-xl">{currentUser.name}</h2>
-             <p className="text-gray-600">{currentUser.email}</p>
-           </div>
+ const renderStatusColor = (status: OrderType['status']) => {
+  const statusColors: Record<OrderType['status'], { bg: string; text: string }> = {
+    'completed': { bg: 'bg-green-50', text: 'text-green-700' },
+    'processing': { bg: 'bg-yellow-50', text: 'text-yellow-700' },
+    'cancelled': { bg: 'bg-red-50', text: 'text-red-700' },
+    'pending': { bg: 'bg-blue-50', text: 'text-blue-700' },
+    'refunded': { bg: 'bg-gray-50', text: 'text-gray-700' }
+  };
 
-           <div className="space-y-2">
-             <button
-               onClick={() => setActiveTab('profile')}
-               className={`w-full text-right py-2 px-4 rounded ${
-                 activeTab === 'profile' ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-50'
-               }`}
-             >
-               معلوماتي
-             </button>
-             <button
-               onClick={() => setActiveTab('orders')}
-               className={`w-full text-right py-2 px-4 rounded ${
-                 activeTab === 'orders' ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-50'
-               }`}
-             >
-               طلباتي
-             </button>
-             <button
-               onClick={() => setActiveTab('favorites')}
-               className={`w-full text-right py-2 px-4 rounded ${
-                 activeTab === 'favorites' ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-50'
-               }`}
-             >
-               المفضلة
-             </button>
-             {currentUser.role === 'admin' && (
-               <button
-                 onClick={() => setActiveTab('dashboard')}
-                 className={`w-full text-right py-2 px-4 rounded ${
-                   activeTab === 'dashboard' ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-50'
-                 }`}
-               >
-                 لوحة التحكم
-               </button>
-             )}
-           </div>
-         </div>
-       </div>
+  return statusColors[status] || { bg: 'bg-gray-50', text: 'text-gray-700' };
+};
 
-       {/* Main Content */}
-       <div className="md:col-span-3">
-         <div className="bg-white rounded-lg shadow p-6">
-           {activeTab === 'profile' && (
-             <div>
-               <h3 className="text-xl font-bold mb-4">المعلومات الشخصية</h3>
-               <form className="space-y-4">
-                 <div>
-                   <label className="block text-sm font-medium text-gray-700">الاسم</label>
-                   <input
-                     type="text"
-                     defaultValue={currentUser.name}
-                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                   />
-                 </div>
-                 <div>
-                   <label className="block text-sm font-medium text-gray-700">البريد الإلكتروني</label>
-                   <input
-                     type="email"
-                     defaultValue={currentUser.email}
-                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                   />
-                 </div>
-                 <div>
-                   <label className="block text-sm font-medium text-gray-700">رقم الهاتف</label>
-                   <input
-                     type="tel"
-                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                   />
-                 </div>
-                 <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
-                   حفظ التغييرات
-                 </button>
-               </form>
-             </div>
-           )}
+const renderStatusText = (status: OrderType['status']) => {
+  const statusTexts: Record<OrderType['status'], string> = {
+    'completed': 'مكتمل',
+    'processing': 'قيد المعالجة',
+    'cancelled': 'ملغي',
+    'pending': 'معلق',
+    'refunded': 'مسترد'
+  };
 
-           {activeTab === 'orders' && (
-             <div>
-               <h3 className="text-xl font-bold mb-4">طلباتي</h3>
-               <div className="space-y-4">
-                 {dummyOrders.map(order => (
-                   <div key={order.id} className="border rounded-lg p-4">
-                     <div className="flex justify-between items-center mb-2">
-                       <span className="font-medium">طلب #{order.id}</span>
-                       <span className="text-sm text-gray-600">{order.date}</span>
-                     </div>
-                     {order.items.map((item, index) => (
-                       <div key={index} className="flex justify-between items-center text-sm text-gray-600">
-                         <span>{item.name} × {item.quantity}</span>
-                         <span>{item.price} ر.س</span>
-                       </div>
-                     ))}
-               <div className="mt-2 flex justify-between items-center">
-  <span className="font-medium">الإجمالي: {order.total} ر.س</span>
-  <span className={`text-sm ${
-    order.status === 'completed' ? 'text-green-600' :
-    order.status === 'processing' ? 'text-yellow-600' :
-    order.status === 'cancelled' ? 'text-red-600' :
-    order.status === 'refunded' ? 'text-gray-600' :
-    order.status=== 'pending'?'text-blue-500':
-    'text-gray-600'
-  }`}>
-    {order.status === 'completed' ? 'مكتمل' :
-    order.status === 'processing' ? 'قيد المعالجة' :
-    order.status === 'cancelled' ? 'ملغي' :
-    order.status=== 'pending'?'معلق':
-    order.status === 'refunded' ? 'مسترد' :
-    'غير معروف'}
-  </span>
-</div>
-</div>
-))}
-</div>
-</div>
+  return statusTexts[status] || 'غير معروف';
+};
+
+return (
+  <div className="bg-gray-100 min-h-screen py-8">
+    <div className="container mx-auto px-4">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        {/* الشريط الجانبي */}
+        <div className="lg:col-span-1">
+          <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-8">
+            <div className="text-center mb-6">
+              <div className="w-24 h-24 mx-auto bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-4 text-3xl font-bold">
+                {currentUser.name[0]}
+              </div>
+              <h2 className="text-2xl font-bold text-gray-800">{currentUser.name}</h2>
+              <p className="text-gray-500">{currentUser.email}</p>
+            </div>
+
+            <div className="space-y-2">
+              {[
+                { name: 'profile', label: 'معلوماتي', icon: '👤' },
+                ...(currentUser.role !== 'admin' ? [
+                { name: 'orders', label: 'طلباتي', icon: '🛒' }
+              ] : []),
+                ...(currentUser.role !== 'admin' ? [
+                  { name: 'favorites', label: 'المفضلة', icon: '❤️' }
+                ] : []),
+                ...(currentUser.role === 'admin' ? [
+                  { name: 'dashboard', label: 'لوحة التحكم', icon: '📊' }
+                ] : [])
+              ].map(tab => (
+                <button
+                  key={tab.name}
+                  onClick={() => setActiveTab(tab.name)}
+                  className={`w-full flex items-center justify-start py-3 px-4 rounded-lg transition-all duration-200 ${
+                    activeTab === tab.name 
+                    ? 'bg-blue-100 text-blue-600 font-bold' 
+                    : 'hover:bg-gray-100 text-gray-700'
+                  }`}
+                >
+                  <span className="ml-3 text-lg">{tab.icon}</span>
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* المحتوى الرئيسي */}
+        <div className="lg:col-span-3">
+          <div className="bg-white rounded-2xl shadow-lg p-8">
+            {activeTab === 'profile' && (
+              <div>
+                <h3 className="text-2xl font-bold mb-6 text-gray-800">المعلومات الشخصية</h3>
+                <form className="space-y-6">
+                  {[
+                    { label: 'الاسم', type: 'text', value: currentUser.name },
+                    { label: 'البريد الإلكتروني', type: 'email', value: currentUser.email },
+                    { label: 'رقم الهاتف', type: 'tel', value: '' }
+                  ].map(field => (
+                    <div key={field.label}>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">{field.label}</label>
+                      <input
+                        type={field.type}
+                        defaultValue={field.value}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-200 transition-all"
+                      />
+                    </div>
+                  ))}
+                  <button 
+                    type="submit" 
+                    className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-all"
+                  >
+                    حفظ التغييرات
+                  </button>
+                </form>
+              </div>
+            )}
+
+            {activeTab === 'orders' && currentUser.role !== 'admin' && (
+              <div>
+                <h3 className="text-2xl font-bold mb-6 text-gray-800">طلباتي</h3>
+                <div className="space-y-6">
+                  {dummyOrders.map(order => (
+                    <div 
+                      key={order.id} 
+                      className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all"
+                    >
+                      <div className="flex justify-between items-center mb-4">
+                        <span className="font-bold text-gray-700">طلب #{order.id}</span>
+                        <span className="text-sm text-gray-500">{order.date}</span>
+                      </div>
+                      {order.items.map((item, index) => (
+                        <div 
+                          key={index} 
+                          className="flex justify-between items-center text-gray-600 mb-2 last:mb-0"
+                        >
+                          <span>{item.name} × {item.quantity}</span>
+                          <span>{item.price} ر.س</span>
+                        </div>
+                      ))}
+                      <div className="mt-4 flex justify-between items-center">
+                        <span className="font-bold text-gray-800">الإجمالي: {order.total} ر.س</span>
+                        <span className={`px-3 py-1 rounded-full text-sm ${renderStatusColor(order.status)}`}>
+                          {renderStatusText(order.status)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'favorites' && currentUser.role !== 'admin' && (
+              <div>
+                <h3 className="text-2xl font-bold mb-6 text-gray-800">المفضلة</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {favoritesState.items
+                    .filter(item => item.userId === currentUser.id)
+                    .map(item => (
+                      <div 
+                        key={item.id} 
+                        className="bg-gray-50 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-all"
+                      >
+                        <img 
+                          src={item.image} 
+                          alt={item.name} 
+                          className="w-full h-48 object-cover"
+                        />
+                        <div className="p-4">
+                          <h4 className="font-bold mb-2 text-gray-800">{item.name}</h4>
+                          <p className="text-blue-600 font-bold mb-4">
+                            {new Intl.NumberFormat('ar-SA', {
+                              style: 'currency',
+                              currency: 'SAR'
+                            }).format(item.price)}
+                          </p>
+                          <button 
+                            onClick={() => favoritesDispatch({ type: 'REMOVE_FAVORITE', payload: item.id })}
+                            className="w-full bg-red-50 text-red-600 py-2 rounded-lg hover:bg-red-100 transition-all"
+                          >
+                            إزالة من المفضلة
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+
+{activeTab === 'dashboard' && currentUser.role === 'admin' && (
+  <div>
+    <h3 className="text-2xl font-bold mb-6 text-gray-800">لوحة التحكم</h3>
+    <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
+      <button 
+        onClick={() => Navigate('/AdminDashboard')}
+        className="w-full bg-purple-50 p-6 rounded-lg text-center hover:shadow-md transition-all cursor-pointer text-purple-700 font-bold text-xl"
+      >
+        الانتقال إلى لوحة التحكم
+      </button>
+    </div>
+  </div>
 )}
-
-           {activeTab === 'favorites' && (
-             <div>
-               <h3 className="text-xl font-bold mb-4">المفضلة</h3>
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                 {favoritesState.items
-                   .filter(item => item.userId === currentUser.id)
-                   .map(item => (
-                     <div key={item.id} className="border rounded-lg p-4">
-                       <img src={item.image} alt={item.name} className="w-full h-40 object-cover rounded-lg mb-2" />
-                       <h4 className="font-bold">{item.name}</h4>
-                       <p className="text-blue-600">
-                         {new Intl.NumberFormat('ar-SA', {
-                           style: 'currency',
-                           currency: 'SAR'
-                         }).format(item.price)}
-                       </p>
-                       <button 
-                         onClick={() => favoritesDispatch({ type: 'REMOVE_FAVORITE', payload: item.id })}
-                         className="mt-2 text-red-600 text-sm hover:underline"
-                       >
-                         إزالة من المفضلة
-                       </button>
-                     </div>
-                   ))}
-               </div>
-             </div>
-           )}
-
-           {activeTab === 'dashboard' && currentUser.role === 'admin' && (
-             <div>
-               <h3 className="text-xl font-bold mb-4">لوحة التحكم</h3>
-               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                 <div className="bg-blue-50 p-4 rounded-lg">
-                   <h4 className="font-bold text-blue-700">إجمالي الطلبات</h4>
-                   <p className="text-2xl font-bold">120</p>
-                 </div>
-                 <div className="bg-green-50 p-4 rounded-lg">
-                   <h4 className="font-bold text-green-700">المبيعات</h4>
-                   <p className="text-2xl font-bold">15,000 ر.س</p>
-                 </div>
-                 <div className="bg-yellow-50 p-4 rounded-lg">
-                   <h4 className="font-bold text-yellow-700">المستخدمين</h4>
-                   <p className="text-2xl font-bold">50</p>
-                 </div>
-               </div>
-             </div>
-           )}
-         </div>
-       </div>
-     </div>
-   </div>
- );
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+);
 };
 
 export default Profile;

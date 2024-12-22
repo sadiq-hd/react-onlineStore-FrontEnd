@@ -17,7 +17,9 @@ interface RegisterErrors {
   phoneNumber: string;
 }
 
-const API_BASE_URL = 'https://reactbackend20241214202555.azurewebsites.net';
+const API_BASE_URL = 'https://localhost:5000/api';
+// const API_BASE_URL = 'https://reactbackend20241214202555.azurewebsites.net';
+
 
 export const useRegister = () => {
   const navigate = useNavigate();

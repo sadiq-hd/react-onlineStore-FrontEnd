@@ -46,12 +46,19 @@ const Header: React.FC = () => {
               >
                 الرئيسية
               </Link>
+
+
+
               <Link 
                 to="/FAQs"
                 className={`text-white text-base font-medium transition-all duration-300 border-b-2 
                           ${isActive('/FAQs') ? 'border-white' : 'border-transparent hover:border-white/50'} 
                           py-2 px-1`}
               >
+
+           
+
+
                 الاسالة الشائعة
               </Link>
               <Link 
@@ -115,23 +122,29 @@ const Header: React.FC = () => {
                         <p className="font-medium text-gray-900">مرحباً،</p>
                         <p className="text-gray-600">{currentUser.name}</p>
                       </div>
-                      <Link to="/profile" onClick={closeMenus} className="block px-4 py-2 text-gray-800 hover:bg-gray-100">
+                      <Link to="/profile" onClick={closeMenus} className="block px-4 py-2 text-gray-800 hover:bg-purple-500">
                         الملف الشخصي
                       </Link>
 
 {currentUser.role === 'user' && (
-  <Link to="/favorites" onClick={closeMenus} className="block px-4 py-2 text-gray-800 hover:bg-gray-100">
+  <Link to="/favorites" onClick={closeMenus} className="block px-4 py-2 text-gray-800 hover:bg-purple-500">
     المفضلة
   </Link>
 )}
                       {currentUser.role === 'admin' && (
-                        <Link to="/AdminDashboard" onClick={closeMenus}  className="block px-4 py-2 text-gray-800 hover:bg-gray-100">
+                        <Link to="/AdminDashboard" onClick={closeMenus}  className="block px-4 py-2 text-gray-800 hover:bg-purple-500">
                           لوحة التحكم
                         </Link>
                         
                       )}
+
+{currentUser.role === 'admin' && (
+                  <Link to="/ProductManagement" onClick={closeMenus} className="block px-4 py-2 text-gray-800 hover:bg-purple-500">
+                    ادارة المنتجات
+                  </Link>
+                )}
                          {currentUser.role === 'admin' && (
-                        <Link to="/AdminDashboard" onClick={closeMenus}  className="block px-4 py-2 text-gray-800 hover:bg-gray-100">
+                        <Link to="/AdminDashboard" onClick={closeMenus}  className="block px-4 py-2 text-gray-800 hover:bg-purple-500">
                          طلبات الشراء
                         </Link>
                         
@@ -142,7 +155,7 @@ const Header: React.FC = () => {
                             closeMenus();
                           }}
                           
-                        className="w-full text-right px-4 py-2 text-red-600 hover:bg-gray-100"
+                        className="w-full text-right px-4 py-2 text-red-600 hover:bg-gray-200"
                       >
                         تسجيل الخروج
                       </button>
@@ -211,6 +224,15 @@ const Header: React.FC = () => {
                     لوحة التحكم
                   </Link>
                 )}
+
+                {currentUser.role === 'admin' && (
+                  <Link to="/ProductManagement" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">
+                    ادارة المنتجات
+                  </Link>
+                )}
+
+
+  
                 <button 
                   onClick={() => {
                     handleLogout();
