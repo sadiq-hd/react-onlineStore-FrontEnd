@@ -1,27 +1,105 @@
 import { useState, Fragment } from 'react';
 import { useProductManagement } from '../../typerScript/useProductManagement';
 import { ProductForm } from '../../components/ProductForm';
-import { Product, PRODUCT_CATEGORIES } from '../../types/product';
+import { Product, ProductCategory, CreateProductDto, PRODUCT_CATEGORIES, StockStatus, getStockStatus } from '../../types/product';
 import ProductImageCarousel from '../../components/ProductImageCarousel';
 import { Dialog, Transition } from '@headlessui/react';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const ProductManagement = () => {
     const { 
         loading, 
-        error, 
-        addProduct, 
-        deleteProduct, 
-        updateProduct,
+        error,
         handleCategoryChange,
         selectedCategory,
-        filteredProducts 
+        filteredProducts,
+        refreshProducts,
+        addProduct,
+        updateProduct,
+        deleteProduct 
     } = useProductManagement();
     
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
+    const handleAddProduct = async (data: CreateProductDto, files: File[]) => {
+        try {
+            const success = await addProduct(data, files);
+            if (success) {
+                toast.success('تم إضافة المنتج بنجاح');
+                await refreshProducts();
+            }
+        } catch (error) {
+            console.error('Error adding product:', error);
+            toast.error('فشل في إضافة المنتج');
+        }
+    };
+
+    const handleUpdateProduct = async (id: number, data: CreateProductDto, files: File[]) => {
+        try {
+            const success = await updateProduct(id, data, files);
+            if (success) {
+                toast.success('تم تحديث المنتج بنجاح');
+                setIsEditModalOpen(false);
+                setEditingProduct(null);
+                await refreshProducts();
+            }
+        } catch (error) {
+            console.error('Error updating product:', error);
+            toast.error('فشل في تحديث المنتج');
+        }
+    };
+
+    const handleDeleteProduct = async (id: number) => {
+        try {
+            if (window.confirm('هل أنت متأكد من حذف هذا المنتج؟')) {
+                const success = await deleteProduct(id);
+                if (success) {
+                    toast.success('تم حذف المنتج بنجاح');
+                    await refreshProducts();
+                }
+            }
+        } catch (error) {
+            console.error('Error deleting product:', error);
+            toast.error('فشل في حذف المنتج');
+        }
+    };
+
+    const getStockClassName = (stock: number): string => {
+        const status = getStockStatus(stock);
+        switch (status) {
+            case StockStatus.IN_STOCK:
+                return 'bg-green-100 text-green-800';
+            case StockStatus.LOW_STOCK:
+                return 'bg-yellow-100 text-yellow-800';
+            case StockStatus.OUT_OF_STOCK:
+                return 'bg-red-100 text-red-800';
+        }
+    };
+
+    const getStockLabel = (stock: number): string => {
+        const status = getStockStatus(stock);
+        switch (status) {
+            case StockStatus.IN_STOCK:
+                return `المخزون: ${stock}`;
+            case StockStatus.LOW_STOCK:
+                return `كمية محدودة: ${stock}`;
+            case StockStatus.OUT_OF_STOCK:
+                return 'نفذ المخزون';
+        }
+    };
+
     return (
         <div className="container mx-auto px-4 py-8 bg-gray-50 min-h-screen">
+            <ToastContainer 
+                position="top-center"
+                rtl={true}
+                autoClose={3000}
+                hideProgressBar={false}
+                closeOnClick
+                pauseOnHover
+            />
             <div className="max-w-7xl mx-auto">
                 <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">إدارة المنتجات</h1>
 
@@ -37,9 +115,7 @@ const ProductManagement = () => {
                         <h2 className="text-xl font-semibold text-gray-800">إضافة منتج جديد</h2>
                     </div>
                     <ProductForm
-                        onSubmit={async (data, files) => {
-                            await addProduct(data, files);
-                        }}
+                        onSubmit={handleAddProduct}
                         isLoading={loading}
                     />
                 </div>
@@ -61,7 +137,7 @@ const ProductManagement = () => {
                             >
                                 الكل
                             </button>
-                            {PRODUCT_CATEGORIES.map(category => (
+                            {PRODUCT_CATEGORIES.map((category: ProductCategory) => (
                                 <button
                                     key={category}
                                     onClick={() => handleCategoryChange(category)}
@@ -77,13 +153,17 @@ const ProductManagement = () => {
                         </div>
                     </div>
                     
-                    {filteredProducts.length === 0 ? (
+                    {loading ? (
+                        <div className="flex justify-center items-center py-8">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+                        </div>
+                    ) : filteredProducts.length === 0 ? (
                         <div className="text-center text-gray-500 py-8">
                             لا توجد منتجات حالياً
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {filteredProducts.map(product => (
+                            {filteredProducts.map((product: Product) => (
                                 <div 
                                     key={product.id} 
                                     className="bg-gray-50 rounded-lg overflow-hidden shadow-md transition-all hover:shadow-xl"
@@ -109,18 +189,8 @@ const ProductManagement = () => {
                                                     currency: 'SAR'
                                                 }).format(product.price)}
                                             </span>
-                                            <span className={`text-sm px-2 py-1 rounded-full ${
-                                                product.stock > 10 
-                                                    ? 'bg-green-100 text-green-800'
-                                                    : product.stock > 0
-                                                        ? 'bg-yellow-100 text-yellow-800'
-                                                        : 'bg-red-100 text-red-800'
-                                            }`}>
-                                                {product.stock > 10 
-                                                    ? `المخزون: ${product.stock}` 
-                                                    : product.stock > 0
-                                                        ? `كمية محدودة: ${product.stock}`
-                                                        : 'نفذ المخزون'}
+                                            <span className={`text-sm px-2 py-1 rounded-full ${getStockClassName(product.stock)}`}>
+                                                {getStockLabel(product.stock)}
                                             </span>
                                         </div>
 
@@ -135,11 +205,7 @@ const ProductManagement = () => {
                                                 تعديل
                                             </button>
                                             <button
-                                                onClick={() => {
-                                                    if (window.confirm('هل أنت متأكد من حذف هذا المنتج؟')) {
-                                                        deleteProduct(product.id);
-                                                    }
-                                                }}
+                                                onClick={() => handleDeleteProduct(product.id)}
                                                 className="flex-1 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors"
                                             >
                                                 حذف
@@ -202,11 +268,7 @@ const ProductManagement = () => {
                                     {editingProduct && (
                                         <ProductForm
                                             initialData={editingProduct}
-                                            onSubmit={async (data, files) => {
-                                                await updateProduct(editingProduct.id, data, files);
-                                                setIsEditModalOpen(false);
-                                                setEditingProduct(null);
-                                            }}
+                                            onSubmit={(data, files) => handleUpdateProduct(editingProduct.id, data, files)}
                                             isLoading={loading}
                                         />
                                     )}
@@ -216,7 +278,8 @@ const ProductManagement = () => {
                                             setIsEditModalOpen(false);
                                             setEditingProduct(null);
                                         }}
-                                        className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+                                        className="absolute top-4 left-4 text-gray-400 hover:text-gray-600"
+                                        aria-label="إغلاق"
                                     >
                                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

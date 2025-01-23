@@ -1,254 +1,229 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDebounce } from 'use-debounce';
-import { 
-   CreateProductDto, 
-   Product, 
-   ProductCategory,
-   PRODUCT_CATEGORIES
-} from '../types/product';
+import { CreateProductDto, Product, ProductCategory } from '../types/product';
 import { productService } from '../services/productService';
-import { useCart, CartItem } from '../context/CartContext';
-import { useFavorites } from '../context/FavoritesContext';
+import { useCart } from '../context/CartContext';
+import { useFavorites } from './useFavorites';
 
 export const useProductManagement = () => {
-   const navigate = useNavigate();
-   const [products, setProducts] = useState<Product[]>([]);
-   const [loading, setLoading] = useState(false);
-   const [error, setError] = useState<string | null>(null);
-   const [currentImageIndex, setCurrentImageIndex] = useState<{ [key: number]: number }>({});
-   const [favorites, setFavorites] = useState<number[]>([]);
-   const [selectedCategory, setSelectedCategory] = useState<ProductCategory | null>(null);
-   const [searchQuery, setSearchQuery] = useState('');
-   const [debouncedQuery] = useDebounce(searchQuery, 300);
+  const navigate = useNavigate();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState<{ [key: number]: number }>({});
+  const [favorites, setFavorites] = useState<number[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<ProductCategory | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery] = useDebounce(searchQuery, 300);
 
-   const { state: cartState, dispatch: cartDispatch } = useCart();
-   const { state: favoritesState, dispatch: favoritesDispatch } = useFavorites();
-   const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+  const { state: cartState, addToCart } = useCart();
+  const { state: favoritesState, addToFavorites, removeFromFavorites } = useFavorites();
+  const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
 
-   // تحديث المفضلة
-   useEffect(() => {
-       setFavorites(favoritesState.items.map(item => item.id));
-   }, [favoritesState.items]);
+  const addProduct = async (productData: CreateProductDto, files: File[]): Promise<boolean> => {
+    try {
+      setLoading(true);
+      const newProduct = await productService.addProduct(productData);
+      
+      if (files.length > 0 && newProduct.id) {
+        const imagePromises = files.map(file => productService.addProductImage(newProduct.id, file));
+        await Promise.all(imagePromises);
+      }
+      
+      await fetchProducts();
+      return true;
+    } catch (err) {
+      console.error('Error in addProduct:', err);
+      setError('فشل في إضافة المنتج');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
 
-   // التحكم في عرض الصور
-   const nextImage = (productId: number, imagesLength: number) => {
-       if (imagesLength <= 1) return;
-       setCurrentImageIndex(prev => ({
-           ...prev,
-           [productId]: ((prev[productId] || 0) + 1) % imagesLength
-       }));
-   };
+  const updateProduct = async (id: number, productData: CreateProductDto, files: File[]): Promise<boolean> => {
+    try {
+      setLoading(true);
+      await productService.updateProduct(id, productData);
+      if (files.length > 0) {
+        await Promise.all(files.map(file => 
+          productService.addProductImage(id, file)
+        ));
+      }
+      await fetchProducts();
+      return true;
+    } catch (err) {
+      setError('فشل في تحديث المنتج');
+      console.error('Error updating product:', err);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
 
-   const prevImage = (productId: number, imagesLength: number) => {
-       if (imagesLength <= 1) return;
-       setCurrentImageIndex(prev => ({
-           ...prev,
-           [productId]: ((prev[productId] || 0) - 1 + imagesLength) % imagesLength
-       }));
-   };
+  const deleteProduct = async (id: number): Promise<boolean> => {
+    try {
+      setLoading(true);
+      await productService.deleteProduct(id);
+      await fetchProducts();
+      return true;
+    } catch (err) {
+      setError('فشل في حذف المنتج');
+      console.error('Error deleting product:', err);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
 
-   // إضافة للمفضلة
-   const handleFavorite = (product: Product) => {
-       if (!currentUser) {
-           navigate('/login');
-           return;
-       }
+  useEffect(() => {
+    setFavorites(favoritesState.items.map(item => item.id));
+  }, [favoritesState.items]);
 
-       const isFavorite = favorites.includes(product.id);
-       const productImage = product.images[0]?.imageUrl || '';
-       
-       if (isFavorite) {
-           favoritesDispatch({ type: 'REMOVE_FAVORITE', payload: product.id });
-           setFavorites(prev => prev.filter(id => id !== product.id));
-       } else {
-           favoritesDispatch({
-               type: 'ADD_FAVORITE',
-               payload: {
-                   id: product.id,
-                   name: product.name,
-                   price: product.price,
-                   image: productImage,
-                   userId: currentUser?.id
-               }
-           });
-           setFavorites(prev => [...prev, product.id]);
-       }
-   };
+  const nextImage = (productId: number, imagesLength: number) => {
+    if (imagesLength <= 1) return;
+    setCurrentImageIndex(prev => ({
+      ...prev,
+      [productId]: ((prev[productId] || 0) + 1) % imagesLength
+    }));
+  };
 
-   // إضافة للسلة
-   const handleAddToCart = (product: Product) => {
-       if (!isProductAvailable(product)) return;
-       
-       const productImage = product.images[0]?.imageUrl || '';
-       cartDispatch({
-           type: 'ADD_ITEM',
-           payload: {
-               id: product.id,
-               category: product.category,
-               name: product.name,
-               price: product.price,
-               image: productImage,
-               quantity: 1
-           }
-       });
-   };
+  const prevImage = (productId: number, imagesLength: number) => {
+    if (imagesLength <= 1) return;
+    setCurrentImageIndex(prev => ({
+      ...prev,
+      [productId]: ((prev[productId] || 0) - 1 + imagesLength) % imagesLength
+    }));
+  };
 
-   // التحقق من توفر المنتج
-   const isProductAvailable = (product: Product): boolean => {
-       const cartItem = cartState.items.find((item: CartItem) => item.id === product.id);
-       const cartQuantity = cartItem ? cartItem.quantity : 0;
-       return cartQuantity < product.stock;
-   };
+  const handleFavorite = async (product: Product) => {
+    if (!currentUser) {
+      navigate('/login');
+      return;
+    }
 
-   // تغيير التصنيف
-   const handleCategoryChange = (category: ProductCategory | null) => {
-       setSelectedCategory(category);
-   };
+    try {
+      if (favorites.includes(product.id)) {
+        await removeFromFavorites(product.id);
+        setFavorites(prev => prev.filter(id => id !== product.id));
+      } else {
+        await addToFavorites(product.id);
+        setFavorites(prev => [...prev, product.id]);
+      }
+    } catch (error) {
+      console.error('Error handling favorite:', error);
+    }
+  };
 
-   // فلترة المنتجات
-   const filteredProducts = products.filter(product => {
-       // فلترة حسب التصنيف
-       if (selectedCategory && product.category !== selectedCategory) {
-           return false;
-       }
-       
-       // فلترة حسب البحث
-       if (searchQuery) {
-           const searchLower = searchQuery.toLowerCase();
-           return (
-               product.name.toLowerCase().includes(searchLower) ||
-               product.description.toLowerCase().includes(searchLower)
-           );
-       }
-       
-       return true;
-   });
+  const handleAddToCart = async (product: Product) => {
+    if (!currentUser) {
+      navigate('/login');
+      return;
+    }
 
-   // جلب المنتجات
-   const fetchProducts = async () => {
-       try {
-           setLoading(true);
-           const data = await productService.getAllProducts();
-           setProducts(data);
-           setError(null);
-       } catch (err) {
-           setError('فشل في تحميل المنتجات');
-           console.error('Error fetching products:', err);
-       } finally {
-           setLoading(false);
-       }
-   };
+    if (!isProductAvailable(product)) {
+      setError('المنتج غير متوفر حالياً');
+      return;
+    }
 
-   // البحث
-   useEffect(() => {
-       const handleSearch = async () => {
-           if (debouncedQuery) {
-               try {
-                   setLoading(true);
-                   const data = await productService.searchProducts({
-                       query: debouncedQuery,
-                       category: selectedCategory || undefined
-                   });
-                   setProducts(data);
-               } catch (err) {
-                   setError('فشل في البحث عن المنتجات');
-                   console.error(err);
-               } finally {
-                   setLoading(false);
-               }
-           } else {
-               fetchProducts();
-           }
-       };
+    try {
+      await addToCart(product.id, 1);
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      setError('فشل في إضافة المنتج إلى السلة');
+    }
+  };
 
-       handleSearch();
-   }, [debouncedQuery, selectedCategory]);
+  const isProductAvailable = (product: Product): boolean => {
+    const cartItem = cartState.items.find(item => item.productId === product.id);
+    const cartQuantity = cartItem ? cartItem.quantity : 0;
+    return cartQuantity < product.stock;
+  };
 
-   // إضافة منتج
-   const addProduct = async (productData: CreateProductDto, files: File[]) => {
-       try {
-           setLoading(true);
-           const newProduct = await productService.addProduct(productData);
-           if (files.length > 0 && newProduct.id) {
-               await Promise.all(files.map(file => 
-                   productService.addProductImage(newProduct.id, file)
-               ));
-           }
-           await fetchProducts();
-           return true;
-       } catch (err) {
-           setError('فشل في إضافة المنتج');
-           console.error('Error adding product:', err);
-           return false;
-       } finally {
-           setLoading(false);
-       }
-   };
+  const handleCategoryChange = (category: ProductCategory | null) => {
+    setSelectedCategory(category);
+  };
 
-   // تحديث منتج
-   const updateProduct = async (id: number, productData: CreateProductDto, files: File[]) => {
-       try {
-           setLoading(true);
-           await productService.updateProduct(id, productData);
-           if (files.length > 0) {
-               await Promise.all(files.map(file => 
-                   productService.addProductImage(id, file)
-               ));
-           }
-           await fetchProducts();
-           return true;
-       } catch (err) {
-           setError('فشل في تحديث المنتج');
-           console.error('Error updating product:', err);
-           return false;
-       } finally {
-           setLoading(false);
-       }
-   };
+  const filteredProducts = products.filter(product => {
+    if (selectedCategory && product.category !== selectedCategory) {
+      return false;
+    }
+    
+    if (searchQuery) {
+      const searchLower = searchQuery.toLowerCase();
+      return (
+        product.name.toLowerCase().includes(searchLower) ||
+        product.description.toLowerCase().includes(searchLower)
+      );
+    }
+    
+    return true;
+  });
 
-   // حذف منتج
-   const deleteProduct = async (id: number) => {
-       try {
-           setLoading(true);
-           await productService.deleteProduct(id);
-           await fetchProducts();
-           return true;
-       } catch (err) {
-           setError('فشل في حذف المنتج');
-           console.error('Error deleting product:', err);
-           return false;
-       } finally {
-           setLoading(false);
-       }
-   };
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const data = await productService.getAllProducts();
+      setProducts(data);
+      setError(null);
+    } catch (err) {
+      setError('فشل في تحميل المنتجات');
+      console.error('Error fetching products:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-   // تحميل المنتجات عند بدء التطبيق
-   useEffect(() => {
-       fetchProducts();
-   }, []);
+  useEffect(() => {
+    const handleSearch = async () => {
+      if (debouncedQuery) {
+        try {
+          setLoading(true);
+          const data = await productService.searchProducts({
+            query: debouncedQuery,
+            category: selectedCategory || undefined
+          });
+          setProducts(data);
+        } catch (err) {
+          setError('فشل في البحث عن المنتجات');
+          console.error(err);
+        } finally {
+            setLoading(false);
+        }
+      } else {
+        fetchProducts();
+      }
+    };
+    
 
-   return {
-       products,
-       loading,
-       error,
-       currentImageIndex,
-       nextImage,
-       prevImage,
-       setCurrentImageIndex,
-       favorites,
-       selectedCategory,
-       handleFavorite,
-       handleAddToCart,
-       isProductAvailable,
-       handleCategoryChange,
-       filteredProducts,
-       PRODUCT_CATEGORIES,
-       addProduct,
-       deleteProduct,
-       updateProduct,
-       searchQuery,
-       setSearchQuery,
-       refreshProducts: fetchProducts
-   };
+    handleSearch();
+  }, [debouncedQuery, selectedCategory]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  return {
+    products,
+    loading,
+    error,
+    currentImageIndex,
+    nextImage,
+    prevImage,
+    setCurrentImageIndex,
+    favorites,
+    selectedCategory,
+    handleFavorite,
+    handleAddToCart,
+    isProductAvailable,
+    handleCategoryChange,
+    filteredProducts,
+    searchQuery,
+    setSearchQuery,
+    refreshProducts: fetchProducts,
+    addProduct,
+    updateProduct,
+    deleteProduct
+  };
 };

@@ -1,4 +1,4 @@
-import React from 'react';
+import { FC } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 import Home from './pages/home/home';
@@ -17,42 +17,119 @@ import FAQs from './pages/FAQs';
 import Footer from './components/Footer';
 import AdminDashboard from './pages/AdminDashboard';
 import ProductManagement from './pages/ProductManagement/ProductManagement';
+import Checkout from './pages/Checkout';
+import OrderDetails from './pages/OrderDetails';
+import Orders from './pages/Orders';
+import PrivateRoute from './PrivateRoute';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
-const App: React.FC = () => {
+const App: FC = () => {
   return (
     <CartProvider>
       <FavoritesProvider>
+        <div dir="rtl" className="font-sans">
+          <ToastContainer 
+            position="top-center" 
+            rtl={true}
+            autoClose={3000}
+            hideProgressBar={false}
+            newestOnTop
+            closeOnClick
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+          />
 
-    <div dir="rtl" className="font-sans">
-      <Header />
-      
-      <main className="container mx-auto px-4 py-8">
-        <Routes>
-          {/* توجيه المسار الجذر إلى /home */}
+          <Header />
           
-          {/* المسارات الأخرى */}
-        <Route path="/" element={<Home />} />
-          <Route path="/about-us" element={<AboutUs />} />
-          <Route path="/contact-me" element={<ContactMe />} />
-          <Route path="/cart" element={<Cart />} />
+          <main className="container mx-auto px-4 py-8">
+            <Routes>
+              {/* المسارات العامة */}
+              <Route path="/" element={<Home />} />
+              <Route path="/about-us" element={<AboutUs />} />
+              <Route path="/contact-me" element={<ContactMe />} />
+              <Route path="/FAQs" element={<FAQs />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/signin" element={<Signin />} />
+              
+              {/* مسارات تسمح للزوار */}
+              <Route
+                path="/cart"
+                element={
+                  <PrivateRoute allowGuest={true}>
+                    <Cart />
+                  </PrivateRoute>
+                }
+              />
 
-          <Route path='/register' element={<Register/>} />
-          <Route path='/signin' element={<Signin/>} />
-          <Route path='/profile' element = {<Profile/>} /> 
-          <Route path="/favorites" element={<Favorites />} />
-          <Route path="/FAQs" element={<FAQs />} />
-          <Route path="/Footer" element={<Footer />} />
-          <Route path="/AdminDashboard" element={<AdminDashboard/>} />
-          <Route path="/ProductManagement" element={<ProductManagement/>} />
-          </Routes>
-      </main>
-      <Footer />
-      <WhatsAppButton />
-    </div>
-    </FavoritesProvider>
+              {/* مسارات تتطلب تسجيل الدخول */}
+              <Route
+                path="/checkout"
+                element={
+                  <PrivateRoute allowGuest={false}>
+                    <Checkout />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/orders"
+                element={
+                  <PrivateRoute>
+                    <Orders />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/orders/:id"
+                element={
+                  <PrivateRoute>
+                    <OrderDetails />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <PrivateRoute>
+                    <Profile />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/favorites"
+                element={
+                  <PrivateRoute>
+                    <Favorites />
+                  </PrivateRoute>
+                }
+              />
 
+              {/* مسارات المشرف */}
+              <Route
+                path="/Admin"
+                element={
+                  <PrivateRoute adminOnly>
+                    <AdminDashboard />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/admin/products"
+                element={
+                  <PrivateRoute adminOnly>
+                    <ProductManagement />
+                  </PrivateRoute>
+                }
+              />
+            </Routes>
+          </main>
+
+          <Footer />
+          <WhatsAppButton />
+        </div>
+      </FavoritesProvider>
     </CartProvider>
-
   );
 };
 

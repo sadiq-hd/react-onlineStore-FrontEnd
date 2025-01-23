@@ -117,31 +117,30 @@ const Home: React.FC = () => {
               animationFillMode: 'forwards'
             }}
           >
-            {/* قسم الصورة */}
-            <div className="relative overflow-hidden">
-              {/* شارة المخزون */}
-              <div className="absolute top-2 right-2 z-10">
-                {product.stock > 10 ? (
-                  <span className="bg-green-500 text-white text-xs px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full text-[10px] sm:text-xs">
-                    متوفر
-                  </span>
-                ) : product.stock > 0 ? (
-                  <span className="bg-yellow-500 text-white text-xs px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full text-[10px] sm:text-xs">
-                    كمية محدودة
-                  </span>
-                ) : (
-                  <span className="bg-red-500 text-white text-xs px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full text-[10px] sm:text-xs">
-                    نفذ المخزون
-                  </span>
-                )}
-              </div>
-              
-              <ProductImageCarousel 
-                images={product.images} 
-                productName={product.name} 
-              />
-            </div>
-            
+        {/* قسم الصورة */}
+<div className="relative overflow-hidden">
+  {/* شارة المخزون */}
+  <div className="absolute top-2 right-2 z-10">
+    {product.stock > 10 ? (
+      <span className="bg-green-500 text-white text-xs px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full text-[10px] sm:text-xs">
+        متوفر
+      </span>
+    ) : product.stock > 0 ? (
+      <span className="bg-yellow-500 text-white text-xs px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full text-[10px] sm:text-xs">
+        كمية محدودة
+      </span>
+    ) : (
+      <span className="bg-red-500 text-white text-xs px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full text-[10px] sm:text-xs">
+        نفذ المخزون
+      </span>
+    )}
+  </div>
+
+  <ProductImageCarousel
+    images={product.images}
+    productName={product.name}
+  />
+</div>
             {/* محتوى المنتج */}
             <div className="p-3 sm:p-4">
               <div className="flex justify-between items-start gap-2 mb-2">

@@ -2,24 +2,43 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import reactLogo from '../assets/react.svg';
 import { useCart } from '../context/CartContext';
+import { useFavorites } from '../context/FavoritesContext';
 
 const Header: React.FC = () => {
-  const { state } = useCart();
+  const { state, resetCart } = useCart();
+  const { resetFavorites } = useFavorites();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const cartItemsCount = state.items.reduce((total, item) => total + item.quantity, 0);
   const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+  const isAdmin = currentUser?.role === 'admin';
+  const isUser = currentUser?.role === 'user';
 
   const closeMenus = () => {
     setIsMenuOpen(false);
     setIsUserMenuOpen(false);
   };
+  
   const isActive = (path: string) => location.pathname === path;
 
-  const handleLogout = () => {
-    localStorage.removeItem('currentUser');
-    window.location.reload();
+  const handleLogout = async () => {
+    try {
+        // حذف بيانات المستخدم
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('token');
+        
+        // إعادة تعيين السلة والمفضلة
+        await Promise.all([
+            resetCart(),
+            resetFavorites()
+        ]);
+
+        // تحديث الصفحة والتوجيه للرئيسية
+        window.location.href = '/';
+    } catch (error) {
+        console.error('Error during logout:', error);
+    }
   };
 
   return (
@@ -46,20 +65,13 @@ const Header: React.FC = () => {
               >
                 الرئيسية
               </Link>
-
-
-
               <Link 
                 to="/FAQs"
                 className={`text-white text-base font-medium transition-all duration-300 border-b-2 
                           ${isActive('/FAQs') ? 'border-white' : 'border-transparent hover:border-white/50'} 
                           py-2 px-1`}
               >
-
-           
-
-
-                الاسالة الشائعة
+                الاسئلة الشائعة
               </Link>
               <Link 
                 to="/about-us"
@@ -126,35 +138,31 @@ const Header: React.FC = () => {
                         الملف الشخصي
                       </Link>
 
-{currentUser.role === 'user' && (
-  <Link to="/favorites" onClick={closeMenus} className="block px-4 py-2 text-gray-800 hover:bg-purple-500">
-    المفضلة
-  </Link>
-)}
-                      {currentUser.role === 'admin' && (
-                        <Link to="/AdminDashboard" onClick={closeMenus}  className="block px-4 py-2 text-gray-800 hover:bg-purple-500">
-                          لوحة التحكم
+                      {isUser && (
+                        <Link to="/favorites" onClick={closeMenus} className="block px-4 py-2 text-gray-800 hover:bg-purple-500">
+                          المفضلة
                         </Link>
-                        
                       )}
 
-{currentUser.role === 'admin' && (
-                  <Link to="/ProductManagement" onClick={closeMenus} className="block px-4 py-2 text-gray-800 hover:bg-purple-500">
-                    ادارة المنتجات
-                  </Link>
-                )}
-                         {currentUser.role === 'admin' && (
-                        <Link to="/AdminDashboard" onClick={closeMenus}  className="block px-4 py-2 text-gray-800 hover:bg-purple-500">
-                         طلبات الشراء
-                        </Link>
-                        
+                      {isAdmin && (
+                        <>
+                          <Link to="/admin/products" onClick={closeMenus} className="block px-4 py-2 text-gray-800 hover:bg-purple-500">
+                            إدارة المنتجات
+                          </Link>
+                          <Link to="/AdminDashboard" onClick={closeMenus} className="block px-4 py-2 text-gray-800 hover:bg-purple-500">
+                            لوحة التحكم
+                          </Link>
+                          <Link to="/admin/orders" onClick={closeMenus} className="block px-4 py-2 text-gray-800 hover:bg-purple-500">
+                            طلبات الشراء
+                          </Link>
+                        </>
                       )}
+                      
                       <button 
                         onClick={() => {
-                            handleLogout();
-                            closeMenus();
-                          }}
-                          
+                          handleLogout();
+                          closeMenus();
+                        }}
                         className="w-full text-right px-4 py-2 text-red-600 hover:bg-gray-200"
                       >
                         تسجيل الخروج
@@ -162,10 +170,10 @@ const Header: React.FC = () => {
                     </>
                   ) : (
                     <>
-                      <Link to="/signin" onClick={closeMenus}  className="block px-4 py-2 text-gray-800 hover:bg-gray-100">
+                      <Link to="/signin" onClick={closeMenus} className="block px-4 py-2 text-gray-800 hover:bg-gray-100">
                         تسجيل الدخول
                       </Link>
-                      <Link to="/register" onClick={closeMenus}  className="block px-4 py-2 text-gray-800 hover:bg-gray-100">
+                      <Link to="/register" onClick={closeMenus} className="block px-4 py-2 text-gray-800 hover:bg-gray-100">
                         إنشاء حساب
                       </Link>
                     </>
@@ -210,29 +218,37 @@ const Header: React.FC = () => {
         {isMenuOpen && (
           <div className="md:hidden py-3 border-t border-blue-400">
             <Link to="/" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">الرئيسية</Link>
-            <Link to="/FAQs" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">الاسالة الشائعة</Link>
+            <Link to="/FAQs" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">الاسئلة الشائعة</Link>
             <Link to="/about-us" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">من نحن</Link>
             <Link to="/contact-me" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">اتصل بنا</Link>
             <hr className="my-2 border-blue-400" />
             {currentUser ? (
               <>
                 <div className="py-2.5 text-white text-center">مرحباً، {currentUser.name}</div>
-                <Link to="/profile" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">الملف الشخصي</Link>
-              
-                {currentUser.role === 'admin' && (
-                  <Link to="/AdminDashboard" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">
-                    لوحة التحكم
+                <Link to="/profile" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">
+                  الملف الشخصي
+                </Link>
+
+                {isUser && (
+                  <Link to="/favorites" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">
+                    المفضلة
                   </Link>
                 )}
 
-                {currentUser.role === 'admin' && (
-                  <Link to="/ProductManagement" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">
-                    ادارة المنتجات
-                  </Link>
+                {isAdmin && (
+                  <>
+                    <Link to="/admin/products" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">
+                      إدارة المنتجات
+                    </Link>
+                    <Link to="/AdminDashboard" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">
+                      لوحة التحكم
+                    </Link>
+                    <Link to="/admin/orders" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">
+                      طلبات الشراء
+                    </Link>
+                  </>
                 )}
 
-
-  
                 <button 
                   onClick={() => {
                     handleLogout();
@@ -245,8 +261,12 @@ const Header: React.FC = () => {
               </>
             ) : (
               <>
-                <Link to="/signin" onClick={closeMenus}  className="block py-2.5 text-white text-center hover:bg-purple-500">تسجيل الدخول</Link>
-                <Link to="/register" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">إنشاء حساب</Link>
+                <Link to="/signin" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">
+                  تسجيل الدخول
+                </Link>
+                <Link to="/register" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">
+                  إنشاء حساب
+                </Link>
               </>
             )}
           </div>

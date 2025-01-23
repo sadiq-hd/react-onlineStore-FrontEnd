@@ -1,19 +1,53 @@
-// src/pages/Cart.tsx
 import React from 'react';
 import { useCart } from '../context/CartContext';
-import { Link } from 'react-router-dom';
+import { Link , useNavigate } from 'react-router-dom';
 
 const Cart: React.FC = () => {
-  const { state, dispatch } = useCart();
+  const { state, removeFromCart, addToCart } = useCart();
+  const navigate = useNavigate();
 
-  const handleQuantityChange = (id: number, quantity: number) => {
-    if (quantity < 1) return;
-    dispatch({ type: 'UPDATE_QUANTITY', payload: { id, quantity } });
+  const handleQuantityChange = async (productId: number, currentQuantity: number, newQuantity: number) => {
+    if (newQuantity < 1) return;
+    
+    if (newQuantity > currentQuantity) {
+      // Adding items
+      await addToCart(productId, newQuantity - currentQuantity);
+    } else {
+      // Removing items
+      await removeFromCart(productId, currentQuantity - newQuantity);
+    }
   };
 
-  const handleRemoveItem = (id: number) => {
-    dispatch({ type: 'REMOVE_ITEM', payload: id });
+  const handleRemoveItem = async (productId: number, quantity: number) => {
+    await removeFromCart(productId, quantity);
   };
+
+  if (state.loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">جاري التحميل...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (state.error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center text-red-600">
+          <p>{state.error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            إعادة المحاولة
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (state.items.length === 0) {
     return (
@@ -38,12 +72,9 @@ const Cart: React.FC = () => {
         <h1 className="text-3xl font-bold text-gray-900 mb-8">سلة التسوق</h1>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Cart Items */}
           <div className="lg:col-span-2 space-y-4">
             {state.items.map(item => (
-              <div key={item.id} className="bg-white rounded-lg shadow-md p-6 flex items-center">
-                <img src={item.image} alt={item.name} className="w-24 h-24 object-cover rounded-md" />
-                
+              <div key={item.productId} className="bg-white rounded-lg shadow-md p-6 flex items-center">
                 <div className="flex-1 mx-4">
                   <h3 className="font-semibold text-lg text-gray-800">{item.name}</h3>
                   <p className="text-gray-600">
@@ -57,14 +88,14 @@ const Cart: React.FC = () => {
                 <div className="flex items-center space-x-4 space-x-reverse">
                   <div className="flex items-center border rounded-lg">
                     <button
-                      onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
+                      onClick={() => handleQuantityChange(item.productId, item.quantity, item.quantity - 1)}
                       className="px-3 py-1 text-gray-600 hover:bg-gray-100"
                     >
                       -
                     </button>
                     <span className="px-3 py-1 text-gray-800">{item.quantity}</span>
                     <button
-                      onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
+                      onClick={() => handleQuantityChange(item.productId, item.quantity, item.quantity + 1)}
                       className="px-3 py-1 text-gray-600 hover:bg-gray-100"
                     >
                       +
@@ -72,7 +103,7 @@ const Cart: React.FC = () => {
                   </div>
                   
                   <button
-                    onClick={() => handleRemoveItem(item.id)}
+                    onClick={() => handleRemoveItem(item.productId, item.quantity)}
                     className="text-red-500 hover:text-red-700"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -84,36 +115,54 @@ const Cart: React.FC = () => {
             ))}
           </div>
 
-          {/* Order Summary */}
           <div className="bg-white rounded-lg shadow-md p-6 h-fit">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">ملخص الطلب</h2>
-            
-            <div className="space-y-3 mb-6">
-              <div className="flex justify-between text-gray-600">
-                <span>عدد المنتجات</span>
-                <span>{state.items.reduce((acc, item) => acc + item.quantity, 0)}</span>
-              </div>
-              <div className="flex justify-between text-gray-600">
-                <span>تكلفة الشحن</span>
-                <span>مجاناً</span>
-              </div>
-              <div className="border-t pt-3">
-                <div className="flex justify-between font-semibold text-lg">
-                  <span>الإجمالي</span>
-                  <span>{new Intl.NumberFormat('ar-SA', {
-                    style: 'currency',
-                    currency: 'SAR'
-                  }).format(state.total)}</span>
-                </div>
-              </div>
-            </div>
+  <h2 className="text-xl font-semibold text-gray-900 mb-4">ملخص الطلب</h2>
+  
+  <div className="space-y-3 mb-6">
+    <div className="flex justify-between text-gray-600">
+      <span>عدد المنتجات</span>
+      <span>{state.items.reduce((acc, item) => acc + item.quantity, 0)}</span>
+    </div>
+    <div className="flex justify-between text-gray-600">
+      <span>المجموع الفرعي</span>
+      <span>{new Intl.NumberFormat('ar-SA', {
+        style: 'currency',
+        currency: 'SAR'
+      }).format(state.total)}</span>
+    </div>
+    <div className="flex justify-between text-gray-600">
+      <span>ضريبة القيمة المضافة (15%)</span>
+      <span>{new Intl.NumberFormat('ar-SA', {
+        style: 'currency',
+        currency: 'SAR'
+      }).format(state.total * 0.15)}</span>
+    </div>
+    <div className="flex justify-between text-gray-600">
+      <span>تكلفة الشحن</span>
+      <span>25 ريال</span>
+    </div>
+    <div className="border-t pt-3">
+      <div className="flex justify-between font-semibold text-lg">
+        <span>الإجمالي النهائي</span>
+        <span>{new Intl.NumberFormat('ar-SA', {
+          style: 'currency',
+          currency: 'SAR'
+        }).format(state.total * 1.15 + 25)}</span>
+      </div>
+    </div>
+  </div>
 
-            <button
-              className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              إتمام الشراء
-            </button>
-          </div>
+  <button 
+    onClick={() => navigate('/checkout')}
+    disabled={state.loading || state.items.length === 0}
+    className={`w-full bg-blue-600 text-white py-3 px-4 rounded-lg transition-colors
+      ${(state.loading || state.items.length === 0) 
+        ? 'opacity-50 cursor-not-allowed' 
+        : 'hover:bg-blue-700'}`}
+  >
+    إتمام الشراء
+  </button>
+</div>
         </div>
       </div>
     </div>
