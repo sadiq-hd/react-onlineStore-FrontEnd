@@ -15,6 +15,13 @@ const PrivateRoute: FC<PrivateRouteProps> = ({
 }) => {
     const location = useLocation();
     const { isAuthenticated, isAdmin, isLoading, isGuest } = useAuth();
+    console.log('PrivateRoute Debug:', {
+        path: location.pathname,
+        isAdmin,
+        adminOnly,
+        user: JSON.parse(localStorage.getItem('currentUser') || 'null'),
+        role: JSON.parse(localStorage.getItem('currentUser') || 'null')?.role
+    });
 
     if (isLoading) {
         return (

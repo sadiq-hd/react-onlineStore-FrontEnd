@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { PaymentMethodType, PAYMENT_METHODS, DeliveryAddress } from '../typerScript/order';
 
 interface DeliveryAddressFormProps {
+  orderId: number; 
   onSubmit: (address: DeliveryAddress) => void;
   onBack: () => void;
   onNext?: () => void;
 }
 
-const DeliveryAddressForm: React.FC<DeliveryAddressFormProps> = ({ onSubmit, onBack, onNext = () => {} }) => {
-  const [fullName, setFullName] = useState('');
+
+const DeliveryAddressForm: React.FC<DeliveryAddressFormProps> = ({ orderId, onSubmit, onBack, onNext = () => {} }) => {  const [fullName, setFullName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [city, setCity] = useState('');
   const [street, setStreet] = useState('');
@@ -17,7 +18,20 @@ const DeliveryAddressForm: React.FC<DeliveryAddressFormProps> = ({ onSubmit, onB
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (fullName.length > 100 || city.length > 50 || street.length > 100 || 
+        (buildingNumber && buildingNumber.length > 20) || 
+        (additionalDetails && additionalDetails.length > 200)) {
+      alert('الرجاء التحقق من طول البيانات المدخلة');
+      return;
+    }
+  
+    if (!/^05\d{8}$/.test(phoneNumber)) {
+      alert('رقم الهاتف غير صحيح');
+      return;
+    }
+  
     const address: DeliveryAddress = {
+      orderId,
       fullName,
       phoneNumber,
       city,
@@ -25,6 +39,7 @@ const DeliveryAddressForm: React.FC<DeliveryAddressFormProps> = ({ onSubmit, onB
       buildingNumber,
       additionalDetails
     };
+    
     onSubmit(address);
     onNext();
   };

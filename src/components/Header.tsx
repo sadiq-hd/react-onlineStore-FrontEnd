@@ -149,10 +149,11 @@ const Header: React.FC = () => {
                           <Link to="/admin/products" onClick={closeMenus} className="block px-4 py-2 text-gray-800 hover:bg-purple-500">
                             إدارة المنتجات
                           </Link>
-                          <Link to="/AdminDashboard" onClick={closeMenus} className="block px-4 py-2 text-gray-800 hover:bg-purple-500">
+                          
+                          <Link to="/admin/AdminDashboard" onClick={closeMenus} className="block px-4 py-2 text-gray-800 hover:bg-purple-500">
                             لوحة التحكم
                           </Link>
-                          <Link to="/admin/orders" onClick={closeMenus} className="block px-4 py-2 text-gray-800 hover:bg-purple-500">
+                          <Link to="/admin/AdminOrders" onClick={closeMenus} className="block px-4 py-2 text-gray-800 hover:bg-purple-500">
                             طلبات الشراء
                           </Link>
                         </>
@@ -233,6 +234,7 @@ const Header: React.FC = () => {
                   <Link to="/favorites" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">
                     المفضلة
                   </Link>
+                  
                 )}
 
                 {isAdmin && (
@@ -240,10 +242,10 @@ const Header: React.FC = () => {
                     <Link to="/admin/products" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">
                       إدارة المنتجات
                     </Link>
-                    <Link to="/AdminDashboard" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">
+                    <Link to="/admin/AdminDashboard" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">
                       لوحة التحكم
                     </Link>
-                    <Link to="/admin/orders" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">
+                    <Link to="/admin/AdminOrders" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">
                       طلبات الشراء
                     </Link>
                   </>

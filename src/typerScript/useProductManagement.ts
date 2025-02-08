@@ -99,7 +99,7 @@ export const useProductManagement = () => {
 
   const handleFavorite = async (product: Product) => {
     if (!currentUser) {
-      navigate('/login');
+      navigate('/signin');
       return;
     }
 
@@ -118,7 +118,7 @@ export const useProductManagement = () => {
 
   const handleAddToCart = async (product: Product) => {
     if (!currentUser) {
-      navigate('/login');
+      navigate('/signin');
       return;
     }
 
@@ -133,6 +133,14 @@ export const useProductManagement = () => {
       console.error('Error adding to cart:', error);
       setError('فشل في إضافة المنتج إلى السلة');
     }
+  };
+
+  const handleCheckout = () => {
+    if (!currentUser) {
+      navigate('/signin');
+      return false;
+    }
+    return true;
   };
 
   const isProductAvailable = (product: Product): boolean => {
@@ -216,6 +224,7 @@ export const useProductManagement = () => {
     selectedCategory,
     handleFavorite,
     handleAddToCart,
+    handleCheckout,
     isProductAvailable,
     handleCategoryChange,
     filteredProducts,

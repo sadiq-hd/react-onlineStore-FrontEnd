@@ -1,4 +1,9 @@
-import { Product } from "../types/product";
+
+export interface OrderUser {
+    id: number;
+    name: string;
+    email: string;
+}
 
 export enum PaymentMethodType {
    CREDIT_CARD = 'CREDIT_CARD',
@@ -28,19 +33,27 @@ export enum OrderStatus {
 }
 
 export interface DeliveryAddress {
-   fullName: string;
-   phoneNumber: string;
-   city: string;
-   street: string;
-   buildingNumber?: string;
-   additionalDetails?: string;
+    id?: number;
+    orderId?: number;
+    fullName: string;
+    phoneNumber: string;
+    city: string;
+    street: string;
+    buildingNumber?: string;
+    additionalDetails?: string;
 }
 
 export interface CreateOrderDto {
-   address: DeliveryAddress;
-   paymentMethod: PaymentMethodType;
-   paymentDetails?: Record<string, string>;
+    address: DeliveryAddress;
+    paymentMethod: PaymentMethodType;
+    paymentDetails?: Record<string, string>;
+    items: {
+        productId: number;
+        quantity: number;
+    }[];
 }
+
+
 
 export interface Order {
     id: number;
@@ -69,28 +82,36 @@ export interface OrderResponseDto {
     paymentMethod: PaymentMethodType;
     items: OrderItemDto[];
     deliveryAddress: DeliveryAddress;
-    paymentDetails?: PaymentDetailsDto;
+    paymentDetails: PaymentDetailsDto;
+    user: {
+        userId: string;
+        userName: string;
+        userEmail: string;
+        userPhone: string;
+    };
 }
 
 export interface OrderItemDto {
-   productId: number;
-   productName: string;
-   quantity: number;
-   price: number;
-   total: number;
-   vatAmount?: number;
-   totalWithVat?: number;
+    productId: number;
+    productName: string;
+    quantity: number;
+    price: number;
+    total: number;
+    vatAmount: number;
+    totalWithVat: number;
 }
 
+
+
 export interface PaymentDetailsDto {
-   paymentMethod: string;
-   status: string;
-   paidAt?: string;
-   transactionId?: string;
-   errorMessage?: string;
-   isRefunded?: boolean;
-   refundedAt?: string;
-   refundAmount?: number;
+    paymentMethod: PaymentMethodType;
+    status: PaymentStatus;
+    paidAt: string | null;
+    transactionId: string | null;
+    errorMessage: string | null;
+    isRefunded: boolean;
+    refundedAt: string | null;
+    refundAmount: number | null;
 }
 
 export const ORDER_STATUS_MAP: Record<OrderStatus, string> = {
@@ -100,6 +121,45 @@ export const ORDER_STATUS_MAP: Record<OrderStatus, string> = {
    [OrderStatus.Delivered]: 'تم التوصيل',
    [OrderStatus.Cancelled]: 'ملغي'
 };
+
+export interface AdminOrderResponse {
+    order: {
+        id: number;
+        status: OrderStatus;
+        orderDate: string;
+        subTotal: number;
+        vatAmount: number;
+        totalAmount: number;
+        deliveryFee: number;
+        finalAmount: number;
+        paymentStatus: PaymentStatus;
+        paymentMethod: PaymentMethodType;
+        items: Array<OrderItemDto>;
+        deliveryAddress: DeliveryAddress;
+        paymentDetails: PaymentDetailsDto;
+    };
+    userInfo: {
+        userId: string;
+        userName: string;
+        userEmail: string;
+        userPhone: string;
+    };
+}
+
+export interface AdminOrdersData {
+    orders: AdminOrderResponse[];
+    pagination: {
+        currentPage: number;
+        pageSize: number;
+        totalItems: number;
+        totalPages: number;
+    };
+    filters: {
+        status: string | null;
+        fromDate: string | null;
+        toDate: string | null;
+    };
+}
 
 export interface PaymentField {
    name: string;
@@ -396,3 +456,59 @@ export const getPaymentStatusLabel = (status: PaymentStatus): string => {
     };
     return statusMap[status];
 };
+
+export interface OrderFilter {
+    page?: number;
+    pageSize?: number;
+    status?: OrderStatus;
+    fromDate?: string;
+    toDate?: string;
+    search?: string;
+    paymentStatus?: PaymentStatus;
+    paymentMethod?: PaymentMethodType;
+    minAmount?: number;
+    maxAmount?: number;
+    sortBy?: 'orderDate' | 'totalAmount' | 'status';
+    sortOrder?: 'asc' | 'desc';
+    city?: string;
+}
+
+export interface OrderPaginationResponse {
+    orders: AdminOrderResponse[];
+    pagination: {
+        currentPage: number;
+        pageSize: number;
+        totalItems: number;
+        totalPages: number;
+    };
+    filters: {
+        status: string | null;
+        fromDate: string | null;
+        toDate: string | null;
+    };
+}
+
+export interface OrderStatistics {
+    totalOrders: number;
+    completedOrders: number;
+    pendingOrders: number;
+    processingOrders: number;
+    cancelledOrders: number;
+    totalRevenue: number;
+    averageOrderValue: number;
+    dailyStats: {
+        date: string;
+        ordersCount: number;
+        revenue: number;
+    }[];
+    paymentMethodStats: {
+        method: PaymentMethodType;
+        count: number;
+        amount: number;
+    }[];
+    cityStats: {
+        city: string;
+        count: number;
+        amount: number;
+    }[];
+}

@@ -18,11 +18,13 @@ import Footer from './components/Footer';
 import AdminDashboard from './pages/AdminDashboard';
 import ProductManagement from './pages/ProductManagement/ProductManagement';
 import Checkout from './pages/Checkout';
-import OrderDetails from './pages/OrderDetails';
-import Orders from './pages/Orders';
+import OrderDetails from './pages/orderes/OrderDetails';
+import UserOrders from './pages/orderes/UserOrders';
+import AdminOrders from './pages/orderes/AdminOrders';
 import PrivateRoute from './PrivateRoute';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+
 
 const App: FC = () => {
   return (
@@ -72,14 +74,17 @@ const App: FC = () => {
                   </PrivateRoute>
                 }
               />
+              
+              {/* مسارات الطلبات للمستخدم العادي */}
               <Route
-                path="/orders"
+                path="/UserOrders"
                 element={
                   <PrivateRoute>
-                    <Orders />
+                    <UserOrders />
                   </PrivateRoute>
                 }
               />
+              
               <Route
                 path="/orders/:id"
                 element={
@@ -88,6 +93,7 @@ const App: FC = () => {
                   </PrivateRoute>
                 }
               />
+
               <Route
                 path="/profile"
                 element={
@@ -96,6 +102,7 @@ const App: FC = () => {
                   </PrivateRoute>
                 }
               />
+              
               <Route
                 path="/favorites"
                 element={
@@ -107,18 +114,38 @@ const App: FC = () => {
 
               {/* مسارات المشرف */}
               <Route
-                path="/Admin"
+                path="/admin/AdminDashboard"
                 element={
                   <PrivateRoute adminOnly>
                     <AdminDashboard />
                   </PrivateRoute>
                 }
               />
+
               <Route
                 path="/admin/products"
                 element={
                   <PrivateRoute adminOnly>
                     <ProductManagement />
+                  </PrivateRoute>
+                }
+              />
+
+              {/* مسارات الطلبات للمشرف */}
+              <Route
+                path="/admin/AdminOrders"
+                element={
+                  <PrivateRoute adminOnly>
+                    <AdminOrders />
+                  </PrivateRoute>
+                }
+              />
+
+              <Route
+                path="/admin/orders/:id"
+                element={
+                  <PrivateRoute adminOnly>
+                    <OrderDetails />
                   </PrivateRoute>
                 }
               />

@@ -1,10 +1,10 @@
 import React from 'react';
-import { PaymentMethodType as TPaymentMethod, PAYMENT_METHODS } from '../typerScript/order';
+import { PaymentMethodType, PAYMENT_METHODS } from '../typerScript/order';
 
 interface PaymentMethodProps {
-    selectedMethod: TPaymentMethod | null;
+    selectedMethod: PaymentMethodType | null;
+    onMethodSelect: (method: PaymentMethodType) => void;
     paymentDetails: Record<string, string>;
-    onMethodSelect: (method: TPaymentMethod) => void;
     onFieldChange: (field: string, value: string) => void;
     onBack: () => void;
     onNext: () => void;
@@ -61,7 +61,6 @@ const PaymentMethod: React.FC<PaymentMethodProps> = ({
                         <input
                             type="radio"
                             name="paymentMethod"
-                            value={method.id}
                             checked={selectedMethod === method.id}
                             onChange={() => onMethodSelect(method.id)}
                             className="sr-only"

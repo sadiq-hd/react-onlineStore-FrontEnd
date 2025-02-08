@@ -48,7 +48,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       localStorage.removeItem('currentUser');
-      window.location.href = '/login';
+      window.location.href = '/signin';
     }
 
     if (error.code === 'ECONNABORTED' || !error.response) {

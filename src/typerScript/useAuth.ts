@@ -1,11 +1,17 @@
 import { useState, useEffect } from 'react';
 
+export enum UserRole {
+    ADMIN = 'admin',
+    USER = 'user'
+}
+
 interface User {
     id: number;
     username: string;
     email: string;
     name: string;
     role: string;
+    
 }
 
 interface AuthState {

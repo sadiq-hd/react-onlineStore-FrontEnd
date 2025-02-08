@@ -1,20 +1,36 @@
-import React, { useState } from 'react';
-import { useFavorites } from '../../typerScript/useFavorites';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useFavorites } from '../../typerScript/useFavorites';
+import { orderService } from '../../services/orderService';
+import { OrderResponseDto } from '../../typerScript/order';
+import { ArrowLeft, ShoppingBag } from 'lucide-react';
+import { toast } from 'react-toastify';
 
-interface OrderType {
-  id: string;
-  date: string;
-  total: number;
-  status: 'pending' | 'processing' | 'completed' | 'cancelled' | 'refunded';
-  items: Array<{ name: string; quantity: number; price: number }>;
-}
-
-const Profile: React.FC = () => {
+const Profile = () => {
   const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
   const [activeTab, setActiveTab] = useState('profile');
   const { state: favoritesState, removeFromFavorites } = useFavorites();
   const navigate = useNavigate();
+  const [orders, setOrders] = useState<OrderResponseDto[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (activeTab === 'orders') {
+      fetchOrders();
+    }
+  }, [activeTab]);
+
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const response = await orderService.getUserOrders(1, 3); // جلب أول 3 طلبات فقط
+      setOrders(response.orders);
+    } catch (error) {
+      toast.error('فشل في تحميل الطلبات');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // التحقق من تسجيل الدخول
   if (!currentUser) {
@@ -26,71 +42,6 @@ const Profile: React.FC = () => {
       </div>
     );
   }
-
-  // البيانات التجريبية للطلبات
-  const dummyOrders: OrderType[] = [
-    {
-      id: '1',
-      date: '2024-03-10',
-      total: 56.99,
-      status: 'completed',
-      items: [{ name: 'سماعات سلكية', quantity: 1, price: 56.99 }]
-    },
-    {
-      id: '2',
-      date: '2024-03-10',
-      total: 100.00,
-      status: 'pending',
-      items: [{ name: 'شاحن ', quantity: 1, price: 100.00 }]
-    },
-    {
-      id: '3',
-      date: '2024-03-10',
-      total: 299.99,
-      status: 'cancelled',
-      items: [{ name: 'سماعات لاسلكية', quantity: 1, price: 299.99 }]
-    },
-    {
-      id: '4',
-      date: '2024-03-10',
-      total: -299.99,
-      status: 'refunded',
-      items: [{ name: 'لابتوب ', quantity: 1, price: -299.99 }]
-    },
-    {
-      id: '5',
-      date: '2024-03-10',
-      total: 299.99,
-      status: 'processing',
-      items: [{ name: ' سلك', quantity: 1, price: 299.99 }]
-    }
-  ];
-
-  // تحديد لون حالة الطلب
-  const renderStatusColor = (status: OrderType['status']) => {
-    const statusColors: Record<OrderType['status'], { bg: string; text: string }> = {
-      'completed': { bg: 'bg-green-50', text: 'text-green-700' },
-      'processing': { bg: 'bg-yellow-50', text: 'text-yellow-700' },
-      'cancelled': { bg: 'bg-red-50', text: 'text-red-700' },
-      'pending': { bg: 'bg-blue-50', text: 'text-blue-700' },
-      'refunded': { bg: 'bg-gray-50', text: 'text-gray-700' }
-    };
-
-    return statusColors[status] || { bg: 'bg-gray-50', text: 'text-gray-700' };
-  };
-
-  // ترجمة حالة الطلب
-  const renderStatusText = (status: OrderType['status']) => {
-    const statusTexts: Record<OrderType['status'], string> = {
-      'completed': 'مكتمل',
-      'processing': 'قيد المعالجة',
-      'cancelled': 'ملغي',
-      'pending': 'معلق',
-      'refunded': 'مسترد'
-    };
-
-    return statusTexts[status] || 'غير معروف';
-  };
 
   // دالة إزالة المنتج من المفضلة
   const handleRemoveFromFavorites = async (productId: number) => {
@@ -181,31 +132,110 @@ const Profile: React.FC = () => {
               {/* قسم الطلبات */}
               {activeTab === 'orders' && currentUser.role !== 'admin' && (
                 <div>
-                  <h3 className="text-2xl font-bold mb-6 text-gray-800">طلباتي</h3>
-                  <div className="space-y-6">
-                    {dummyOrders.map(order => (
-                      <div 
-                        key={order.id} 
-                        className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all"
-                      >
-                        <div className="flex justify-between items-center mb-4">
-                          <span className="font-bold text-gray-700">طلب #{order.id}</span>
-                          <span className="text-sm text-gray-500">{order.date}</span>
-                        </div>
-                        {order.items.map((item, index) => (
-                          <div 
-                            key={index} 
-                            className="flex justify-between items-center text-gray-600 mb-2 last:mb-0"
-                          >
-                            <span>{item.name} × {item.quantity}</span>
-                            <span>{item.price} ر.س</span>
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-2xl font-bold text-gray-800">طلباتي</h3>
+                    <button
+                      onClick={() => navigate('/UserOrders')}
+                      className="text-blue-600 hover:text-blue-700 flex items-center gap-2"
+                    >
+                      عرض كل الطلبات
+                      <ArrowLeft className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  {loading ? (
+                    <div className="flex justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    </div>
+                  ) : orders.length === 0 ? (
+                    <div className="text-center py-8">
+                      <ShoppingBag className="h-12 w-12 mx-auto text-gray-400 mb-3" />
+                      <p className="text-gray-600">لا توجد طلبات حالياً</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      {orders.slice(0, 3).map(order => (
+                        <div
+                          key={order.id}
+                          onClick={() => navigate(`/orders/${order.id}`)}
+                          className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all cursor-pointer"
+                        >
+                          <div className="flex justify-between items-center mb-4">
+                            <div className="flex items-center gap-3">
+                              <span className="font-bold text-gray-700">طلب #{order.id}</span>
+                              <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm ${
+                                orderService.getOrderStatusColor(order.status)
+                              }`}>
+                                {orderService.getOrderStatusText(order.status)}
+                              </span>
+                            </div>
+                            <span className="text-sm text-gray-500">
+                              {new Date(order.orderDate).toLocaleDateString('ar-SA', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                              })}
+                            </span>
                           </div>
-                        ))}
-                        <div className="mt-4 flex justify-between items-center">
-                          <span className="font-bold text-gray-800">الإجمالي: {order.total} ر.س</span>
-                          <span className={`px-3 py-1 rounded-full text-sm ${renderStatusColor(order.status).bg} ${renderStatusColor(order.status).text}`}>
-                            {renderStatusText(order.status)}
-                          </span>
+
+                          <div className="space-y-2">
+                            {order.items.slice(0, 2).map((item) => (
+                              <div
+                                key={item.productId}
+                                className="flex justify-between items-center text-gray-600"
+                              >
+                                <span>{item.productName} × {item.quantity}</span>
+                                <span>{orderService.formatCurrency(item.price * item.quantity)}</span>
+                              </div>
+                            ))}
+                            {order.items.length > 2 && (
+                              <p className="text-sm text-gray-500">
+                                و {order.items.length - 2} منتجات أخرى
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="mt-4 flex justify-between items-center pt-4 border-t">
+                            <div className="text-sm text-gray-600">
+                              {orderService.getPaymentMethodText(order.paymentMethod)}
+                            </div>
+                            <div className="font-bold text-gray-800">
+                              {orderService.formatCurrency(order.finalAmount)}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* قسم المفضلة */}
+              {activeTab === 'favorites' && currentUser.role !== 'admin' && (
+                <div>
+                  <h3 className="text-2xl font-bold mb-6 text-gray-800">المفضلة</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {favoritesState.items.map(item => (
+                      <div 
+                        key={item.id} 
+                        className="bg-gray-50 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-all"
+                      >
+                        <img 
+                          src={item.imageUrl} 
+                          alt={item.name} 
+                          className="w-full h-48 object-cover"
+                        />
+                        <div className="p-4">
+                          <h4 className="font-bold mb-2 text-gray-800">{item.name}</h4>
+                          <p className="text-blue-600 font-bold mb-4">
+                            {orderService.formatCurrency(item.price)}
+                          </p>
+                          <button 
+                            onClick={() => handleRemoveFromFavorites(item.id)}
+                            className="w-full bg-red-50 text-red-600 py-2 rounded-lg hover:bg-red-100 transition-all"
+                          >
+                            إزالة من المفضلة
+                          </button>
                         </div>
                       </div>
                     ))}
@@ -213,41 +243,6 @@ const Profile: React.FC = () => {
                 </div>
               )}
 
-             {/* قسم المفضلة */}
-{activeTab === 'favorites' && currentUser.role !== 'admin' && (
-  <div>
-    <h3 className="text-2xl font-bold mb-6 text-gray-800">المفضلة</h3>
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {favoritesState.items.map(item => (
-        <div 
-          key={item.id} 
-          className="bg-gray-50 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-all"
-        >
-          <img 
-            src={item.imageUrl} 
-            alt={item.name} 
-            className="w-full h-48 object-cover"
-          />
-          <div className="p-4">
-            <h4 className="font-bold mb-2 text-gray-800">{item.name}</h4>
-            <p className="text-blue-600 font-bold mb-4">
-              {new Intl.NumberFormat('ar-SA', {
-                style: 'currency',
-                currency: 'SAR'
-              }).format(item.price)}
-            </p>
-            <button 
-              onClick={() => handleRemoveFromFavorites(item.id)}
-              className="w-full bg-red-50 text-red-600 py-2 rounded-lg hover:bg-red-100 transition-all"
-            >
-              إزالة من المفضلة
-            </button>
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-)}
               {/* قسم لوحة التحكم */}
               {activeTab === 'dashboard' && currentUser.role === 'admin' && (
                 <div>
