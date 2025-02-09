@@ -8,6 +8,7 @@ import {
     PaymentStatus,
     OrderFilter,
     OrderPaginationResponse,
+    TopCustomer
 
 } from '../typerScript/order';
 
@@ -87,6 +88,36 @@ class OrderService {
                 throw error;
             }
             throw new Error('حدث خطأ أثناء إنشاء الطلب');
+        }
+    }
+
+    async getTopCustomers(limit: number = 10): Promise<TopCustomer[]> {
+        const token = localStorage.getItem('token');
+        try {
+            const response = await api.get<TopCustomer[]>(
+                `${this.baseUrl}/admin/top-customers`,
+                {
+                    params: { limit },
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                }
+            );
+            return response.data.map(customer => ({
+                ...customer,
+                totalSpent: Number(customer.totalSpent), // تأكد من أن المبلغ رقم
+                lastPurchase: new Date(customer.lastPurchase).toISOString() // تنسيق التاريخ
+            }));
+        } catch (error) {
+            if (error instanceof AxiosError) {
+                if (error.response?.status === 401) {
+                    throw new Error('الرجاء تسجيل الدخول مرة أخرى');
+                }
+                if (error.response?.status === 403) {
+                    throw new Error('ليس لديك صلاحية للوصول إلى هذه البيانات');
+                }
+            }
+            throw new Error('حدث خطأ أثناء جلب بيانات العملاء الأكثر شراءً');
         }
     }
 

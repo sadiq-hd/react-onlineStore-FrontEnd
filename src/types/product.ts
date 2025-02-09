@@ -26,6 +26,32 @@ export interface Product {
   stock: number;
   category: ProductCategory;
   images: ProductImage[];
+  createdAt: string;  
+  updatedAt: string;  
+}
+
+export interface SalesAnalytics {
+  date: string;
+  sales: number;
+  revenue: number;
+  subTotal: number;
+  vat: number;
+  deliveryFees: number;
+}
+
+export interface DashboardStats {
+  totalOrders: number;
+  completedOrders: number;
+  pendingOrders: number;
+  processingOrders: number;
+  cancelledOrders: number;
+  totalRevenue: number;
+  averageOrderValue: number;
+  dailyOrders: {
+    date: string;
+    count: number;
+    revenue: number;
+  }[];
 }
 
 // نوع لإنشاء منتج جديد (بدون id و images)

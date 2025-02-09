@@ -1,163 +1,220 @@
-import { useState, ChangeEvent } from 'react';
-import { Product, Customer, TopProduct, SalesData } from '../types/dashboard';
+import { useState, useEffect } from 'react';
+import { orderService } from '../services/orderService';
+import { productService } from '../services/productService';
+import { 
+    Product as DashboardProduct,
+    Customer, 
+    TopProduct, 
+    SalesData, 
+    DashboardCalculations, 
+    ProfitCalculations,
+    StockStatus
+} from '../types/dashboard';
+import { Product as ProductType } from '../types/product';
 
-// البيانات التجريبية
-const dummyProducts: Product[] = [
-  {
-    id: 1,
-    category: "سماعات",
-    name: "سماعات لاسلكية",
-    price: 299.99,
-    stock: 3,
-    images: [
-      "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500",
-      "https://images.unsplash.com/photo-1484704849700-f032a568e944?w=500",
-      "https://images.unsplash.com/photo-1583394838336-acd977736f90?w=500"
-    ],
-    description: "سماعات بلوتوث عالية الجودة مع عزل للضوضاء"
-  },
-  {
-    id: 2,
-    category: "ساعات",
-    name: "ساعة ذكية",
-    price: 599.99,
-    stock: 30,
-    images: [
-      "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500",
-      "https://images.unsplash.com/photo-1579586337278-3befd40fd17a?w=500",
-      "https://images.unsplash.com/photo-1434493789847-2f02dc6ca35d?w=500"
-    ],
-    description: "ساعة ذكية متعددة المزايا مع تتبع اللياقة البدنية"
-  },
-  {
-    id: 3,
-    category: "حقائب",
-    name: "حقيبة لابتوب",
-    price: 199.99,
-    stock: 100,
-    images: [
-      "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500",
-      "https://images.unsplash.com/photo-1622560480605-d83c853bc5c3?w=500",
-      "https://images.unsplash.com/photo-1576595580361-90a855b84b20?w=500"
-    ],
-    description: "حقيبة لابتوب أنيقة ومقاومة للماء"
-  },
-  {
-    id: 4,
-    category: "شواحن",
-    name: "شاحن متنقل",
-    price: 149.99,
-    stock: 75,
-    images: [
-      "https://images.unsplash.com/photo-1609091839311-d5365f9ff1c5?w=500",
-      "https://images.unsplash.com/photo-1585338647529-03d363fe9ace?w=500",
-      "https://images.unsplash.com/photo-1587831990711-23ca6441447b?w=500"
-    ],
-    description: "شاحن متنقل سعة 20000mAh مع شحن سريع"
-  },
-  {
-    id: 5,
-    category: "مستلزمات الكمبيوتر",
-    name: "كيبورد ميكانيكي",
-    price: 399.99,
-    stock: 45,
-    images: [
-      "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=500",
-      "https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?w=500",
-      "https://images.unsplash.com/photo-1595225476474-488a00f9c5b4?w=500"
-    ],
-    description: "لوحة مفاتيح ميكانيكية مع إضاءة RGB"
-  },
-  {
-    id: 6,
-    category: "مستلزمات الكمبيوتر",
-    name: "ماوس للألعاب",
-    price: 249.99,
-    stock: 60,
-    images: [
-      "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=500",
-      "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=500",
-      "https://images.unsplash.com/photo-1588931731810-bcbe8624f1eb?w=500"
-    ],
-    description: "ماوس احترافي للألعاب مع دقة عالية"
-  },
-  {
-    id: 7,
-    category: "مستلزمات الكمبيوتر",
-    name: "مكبر صوت بلوتوث",
-    price: 179.99,
-    stock: 0,
-    images: [
-      "https://images.unsplash.com/photo-1545454675-3531b543be5d?w=500",
-      "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=500",
-      "https://images.unsplash.com/photo-1612198273689-c47e28514ced?w=500"
-    ],
-    description: "سماعة بلوتوث محمولة مع صوت ستيريو قوي"
-  }
-];
+interface DailyOrder {
+  date: string;
+  count: number;
+  revenue: number;
+}
 
-const topCustomers: Customer[] = [
-  { id: 1, name: "أحمد محمد", purchases: 15, totalSpent: 4500 },
-  { id: 2, name: "سارة أحمد", purchases: 12, totalSpent: 3800 },
-  { id: 3, name: "محمد علي", purchases: 10, totalSpent: 3200 },
-  { id: 4, name: "فاطمة حسن", purchases: 8, totalSpent: 2900 },
-];
+interface OrderStats {
+  totalOrders: number;
+  completedOrders: number;
+  pendingOrders: number;
+  processingOrders: number;
+  cancelledOrders: number;
+  totalRevenue: number;
+  averageOrderValue: number;
+  dailyOrders: DailyOrder[];
+}
 
-const topProducts: TopProduct[] = [
-  { name: "سماعات لاسلكية", sales: 150 },
-  { name: "ساعة ذكية", sales: 120 },
-  { name: "شاحن متنقل", sales: 100 },
-  { name: "حقيبة لابتوب", sales: 80 }
-];
-
-const salesData: SalesData[] = [
-  { name: 'يناير', sales: 4000 },
-  { name: 'فبراير', sales: 3000 },
-  { name: 'مارس', sales: 5000 },
-  { name: 'أبريل', sales: 4500 },
-  { name: 'مايو', sales: 6000 },
-  { name: 'يونيو', sales: 5500 },
-];
-
+interface SaleAnalytic {
+  date: string;
+  sales: number;
+  revenue: number;
+  subTotal: number;
+  vat: number;
+  deliveryFees: number;
+}
 export const useDashboard = () => {
-  const [searchTerm, setSearchTerm] = useState<string>('');
-  const products = dummyProducts;
+    const [searchTerm, setSearchTerm] = useState<string>('');
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [products, setProducts] = useState<DashboardProduct[]>([]);
+    const [filteredProducts, setFilteredProducts] = useState<DashboardProduct[]>([]);
+    const [salesData, setSalesData] = useState<SalesData[]>([]);
+    const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
+    const [topCustomers, setTopCustomers] = useState<Customer[]>([]);
+    const [calculations, setCalculations] = useState<DashboardCalculations>({
+        totalProducts: 0,
+        totalStock: 0,
+        totalValue: 0,
+        activeCustomers: 0
+    });
+    const [profitCalculations, setProfitCalculations] = useState<ProfitCalculations>({
+        totalProfit: 0,
+        netProfit: 0,
+        grossMargin: 0,
+        profitMargin: 0
+    });
+    const [orderStats, setOrderStats] = useState<OrderStats>({
+      totalOrders: 0,
+      completedOrders: 0,
+      pendingOrders: 0,
+      processingOrders: 0,
+      cancelledOrders: 0,
+      totalRevenue: 0,
+      averageOrderValue: 0,
+      dailyOrders: []
+  });
 
-  const handleSearch = (e: ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-  };
+    // تحويل نوع المنتج
+    const transformProduct = (product: ProductType): DashboardProduct => ({
+        ...product,
+        images: product.images.map(img => img.imageUrl)
+    });
 
-  const filteredProducts = products.filter(product =>
-    product.name.includes(searchTerm) || 
-    product.category.includes(searchTerm)
-  );
+    useEffect(() => {
+      const fetchDashboardData = async () => {
+          try {
+              setLoading(true);
+              setError(null);
 
-  const calculations = {
-    totalStock: products.reduce((acc, curr) => acc + curr.stock, 0),
-    totalValue: products.reduce((acc, curr) => acc + (curr.price * curr.stock), 0),
-    totalProducts: products.length,
-    activeCustomers: topCustomers.length
-  };
-  const profitCalculations = {
-    totalValue: products.reduce((acc, curr) => acc + (curr.price * curr.stock), 0),
-    totalProfit: products.reduce((acc, curr) => acc + (curr.price * curr.stock), 0),
-    netProfit: products.reduce((acc, curr) => acc + ((curr.price * 0.15) * curr.stock), 0),
-  };
-  const stockStatus = (stock: number) => {
-    if (stock > 10) return { class: 'bg-green-100 text-green-800', text: 'متوفر' };
-    if (stock > 0) return { class: 'bg-yellow-100 text-yellow-800', text: 'منخفض' };
-    return { class: 'bg-red-100 text-red-800', text: 'نفذ المخزون' };
-  };
+              try {
+                  const [productsData, productStats] = await Promise.all([
+                      productService.getAllProducts(),
+                      productService.getProductStats()
+                  ]);
 
-  return {
-    searchTerm,
-    handleSearch,
-    filteredProducts,
-    calculations,
-    stockStatus,
-    topCustomers,
-    topProducts,
-    salesData,
-    profitCalculations
-  };
+                  const transformedProducts = productsData.map(transformProduct);
+                  setProducts(transformedProducts);
+                  setFilteredProducts(transformedProducts);
+
+                  setCalculations({
+                      totalProducts: productStats.totalProducts,
+                      totalStock: productStats.totalStock,
+                      totalValue: productStats.totalValue,
+                      activeCustomers: 0
+                  });
+              } catch (error) {
+                  console.error('Error fetching product data:', error);
+              }
+
+              try {
+                  const [salesAnalytics, orderStatistics, topSellingProducts, topCustomersData] = 
+                      await Promise.all([
+                          productService.getSalesAnalytics(),
+                          orderService.getOrdersStatistics(),
+                          productService.getTopSellingProducts(),
+                          orderService.getTopCustomers()
+                      ]);
+
+                  if (salesAnalytics) {
+                      const formattedSalesData = (salesAnalytics as SaleAnalytic[]).map((sale: SaleAnalytic) => ({
+                          name: new Date(sale.date).toLocaleDateString('ar-SA'),
+                          sales: sale.sales,
+                          revenue: sale.revenue,
+                          subTotal: sale.subTotal,
+                          vat: sale.vat,
+                          deliveryFees: sale.deliveryFees
+                      }));
+                      setSalesData(formattedSalesData);
+                  }
+
+                  // نحول OrderStats إلى النوع الصحيح
+                  const typedOrderStats: OrderStats = {
+                      ...orderStatistics,
+                      dailyOrders: orderStatistics.dailyOrders.map((order: DailyOrder) => ({
+                          date: order.date,
+                          count: order.count,
+                          revenue: order.revenue
+                      }))
+                  };
+                  setOrderStats(typedOrderStats);
+                  
+                  setTopProducts(topSellingProducts);
+                  setTopCustomers(topCustomersData);
+
+                  setProfitCalculations({
+                      totalProfit: orderStatistics.totalRevenue,
+                      netProfit: orderStatistics.totalRevenue * 0.7,
+                      grossMargin: 30,
+                      profitMargin: 21
+                  });
+
+                  setCalculations(prev => ({
+                      ...prev,
+                      activeCustomers: orderStatistics.completedOrders
+                  }));
+
+              } catch (error) {
+                  console.error('Error fetching sales and order data:', error);
+              }
+
+              setLoading(false);
+          } catch (error) {
+              console.error('Error in fetchDashboardData:', error);
+              setError(error instanceof Error ? error.message : 'حدث خطأ في جلب البيانات');
+              setLoading(false);
+          }
+      };
+
+      fetchDashboardData();
+  }, []);
+  
+    const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const searchValue = e.target.value.toLowerCase();
+        setSearchTerm(searchValue);
+
+        const filtered = products.filter(product =>
+            product.name.toLowerCase().includes(searchValue) ||
+            product.category.toLowerCase().includes(searchValue)
+        );
+        setFilteredProducts(filtered);
+    };
+
+    const stockStatus = (stock: number): StockStatus => {
+        if (stock === 0) {
+            return { 
+                text: 'نفذ المخزون', 
+                class: 'bg-red-100 text-red-800' 
+            };
+        }
+        if (stock <= 10) {
+            return { 
+                text: 'منخفض', 
+                class: 'bg-yellow-100 text-yellow-800' 
+            };
+        }
+        return { 
+            text: 'متوفر', 
+            class: 'bg-green-100 text-green-800' 
+        };
+    };
+
+    const formatCurrency = (amount: number): string => {
+        return new Intl.NumberFormat('ar-SA', {
+            style: 'currency',
+            currency: 'SAR',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(amount);
+    };
+
+    return {
+        searchTerm,
+        handleSearch,
+        filteredProducts,
+        calculations,
+        stockStatus,
+        topCustomers,
+        topProducts,
+        salesData,
+        profitCalculations,
+        orderStats,
+        loading,
+        error,
+        formatCurrency
+    };
 };

@@ -146,6 +146,16 @@ export interface AdminOrderResponse {
     };
 }
 
+export interface TopCustomer {
+    id: number;
+    name: string;
+    email: string;
+    phone: string;
+    purchases: number;
+    totalSpent: number;
+    lastPurchase: string;
+}
+
 export interface AdminOrdersData {
     orders: AdminOrderResponse[];
     pagination: {

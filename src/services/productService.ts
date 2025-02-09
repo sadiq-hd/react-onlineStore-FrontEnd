@@ -3,12 +3,70 @@ import {
  Product, 
  CreateProductDto, 
  SearchProductsParams, 
- ProductImage 
+ ProductImage,
+
 } from '../types/product';
 import { CartItem } from '../typerScript/cart';
 
 const API_URL = 'https://localhost:5000/api';
 const IMAGE_URL = 'https://localhost:5000';
+
+export interface ProductStats {
+  totalProducts: number;
+  totalStock: number;
+  totalValue: number;
+  lowStockProducts: number;
+  outOfStockProducts: number;
+  productsByCategory: {
+    category: string;
+    count: number;
+  }[];
+}
+
+export interface TopProduct {
+  id: number;
+  name: string;
+  sales: number;
+  revenue: number;
+}
+
+export interface SalesAnalytics {
+  date: string;
+  sales: number;
+  revenue: number;
+  subTotal: number;
+  vat: number;
+  deliveryFees: number;
+}
+
+export interface DashboardStats {
+  totalOrders: number;
+  completedOrders: number;
+  pendingOrders: number;
+  processingOrders: number;
+  cancelledOrders: number;
+  totalRevenue: number;
+  averageOrderValue: number;
+  dailyOrders: {
+    date: string;
+    count: number;
+    revenue: number;
+  }[];
+}
+
+export interface SalesStats {
+  topSellingProducts: {
+    id: number;
+    name: string;
+    sales: number;
+    revenue: number;
+  }[];
+  salesByPeriod: {
+    date: string;
+    sales: number;
+    revenue: number;
+  }[];
+}
 
 export const productService = {
  // جلب كل المنتجات
@@ -31,6 +89,127 @@ export const productService = {
      throw error;
    }
  },
+
+ getProductStats: async (): Promise<ProductStats> => {
+  const token = localStorage.getItem('token');
+  try {
+    const response = await axios.get<ProductStats>(
+      `${API_URL}/products/stats`,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching product stats:', error);
+    throw error;
+  }
+},
+
+// إحصائيات المبيعات
+getSalesStats: async (period: 'day' | 'week' | 'month' | 'year' = 'month'): Promise<SalesStats> => {
+  const token = localStorage.getItem('token');
+  try {
+    const response = await axios.get<SalesStats>(
+      `${API_URL}/products/sales-stats`,
+      {
+        params: { period },
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching sales stats:', error);
+    throw error;
+  }
+},
+
+
+
+getTopSellingProducts: async (limit: number = 5): Promise<TopProduct[]> => {
+  const token = localStorage.getItem('token');
+  try {
+    const response = await axios.get<TopProduct[]>(
+      `${API_URL}/products/top-selling`,
+      {
+        params: { limit },
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching top selling products:', error);
+    throw error;
+  }
+},
+
+// في ملف productService.ts
+getSalesAnalytics: async (startDate?: string, endDate?: string) => {
+  const token = localStorage.getItem('token');
+  try {
+      console.log('Fetching sales analytics...'); // للتتبع
+      const response = await axios.get(`${API_URL}/products/sales-analytics`, {
+          params: { startDate, endDate },
+          headers: {
+              'Authorization': `Bearer ${token}`
+          }
+      });
+      console.log('Sales analytics response:', response.data); // للتتبع
+      return response.data;
+  } catch (error) {
+      console.error('Error fetching sales analytics:', error);
+      if (axios.isAxiosError(error)) {
+          console.error('Response data:', error.response?.data);
+          console.error('Response status:', error.response?.status);
+      }
+      throw error;
+  }
+},
+
+getDashboardStats: async (): Promise<DashboardStats> => {
+  const token = localStorage.getItem('token');
+  try {
+    const response = await axios.get<DashboardStats>(
+      `${API_URL}/products/dashboard-stats`,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching dashboard stats:', error);
+    throw error;
+  }
+},
+
+
+// المنتجات منخفضة المخزون
+getLowStockProducts: async (threshold: number = 10): Promise<Product[]> => {
+  const token = localStorage.getItem('token');
+  try {
+    const response = await axios.get<Product[]>(
+      `${API_URL}/products/low-stock`,
+      {
+        params: { threshold },
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching low stock products:', error);
+    throw error;
+  }
+},
  
  getCart: async (): Promise<CartItem[]> => {
   const token = localStorage.getItem('token');
