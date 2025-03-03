@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Package, Download, Search } from 'lucide-react';
+import { useNavigate } from "react-router-dom"; // تأكد من استيراد هذا
+import { Package, Download, Search, ExternalLink } from 'lucide-react';
 import { 
     OrderStatus, 
     PaymentStatus,
@@ -17,6 +18,13 @@ import { toast } from 'react-toastify';
 const DEFAULT_PAGE_SIZE = 10;
 
 const AdminOrders = () => {
+    const navigate = useNavigate(); // استخدام هوك التنقل
+    
+    // تعريف دالة الانتقال إلى صفحة التفاصيل (يجب أن تكون بعد تعريف navigate)
+    const handleViewOrderDetails = (orderId: number) => {
+        navigate(`/admin/AdminOrderDetails/${orderId}`);
+    };
+    
     const [ordersData, setOrdersData] = useState<OrderPaginationResponse>({
         orders: [],
         pagination: {
@@ -51,6 +59,7 @@ const AdminOrders = () => {
             setLoading(true);
             const response = await orderService.getAdminOrders({
                 ...filter,
+                page: filter.page || 1, // تأكد من أن الصفحة لها قيمة افتراضية
                 search: searchTerm || undefined
             });
             setOrdersData(response);
@@ -72,37 +81,60 @@ const AdminOrders = () => {
     };
 
     const handleFilterChange = (key: keyof OrderFilter, value: any) => {
-        setFilter(prev => ({ ...prev, [key]: value, page: 1 }));
+        // عندما تكون القيمة الجديدة لـ page، تأكد من أنها رقم صحيح وليست undefined
+        if (key === 'page' && value !== undefined) {
+            const pageNumber = parseInt(value, 10);
+            if (!isNaN(pageNumber)) {
+                setFilter(prev => ({ ...prev, page: pageNumber }));
+            }
+        } else {
+            setFilter(prev => ({ ...prev, [key]: value, page: key === 'page' ? value : prev.page }));
+        }
     };
 
     const handleStatusChange = async (orderId: number, newStatus: OrderStatus) => {
         try {
+            // إضافة تأكيد قبل التحديث
+            if (!window.confirm('هل أنت متأكد من تغيير حالة الطلب؟')) {
+                return;
+            }
+    
+            setLoading(true); // إضافة حالة تحميل
             await orderService.updateOrderStatus(orderId, newStatus);
             toast.success('تم تحديث حالة الطلب بنجاح');
-            fetchOrders();
+            await fetchOrders(); // إعادة تحميل الطلبات
         } catch (error) {
             if (error instanceof Error) {
                 toast.error(error.message);
             } else {
                 toast.error('فشل في تحديث حالة الطلب');
             }
+        } finally {
+            setLoading(false);
         }
     };
 
     const handlePaymentStatusChange = async (orderId: number, newStatus: PaymentStatus) => {
         try {
+            // إضافة تأكيد قبل التحديث
+            if (!window.confirm('هل أنت متأكد من تغيير حالة الدفع؟')) {
+                return;
+            }
+    
+            setLoading(true);
             await orderService.updatePaymentStatus(orderId, newStatus);
             toast.success('تم تحديث حالة الدفع بنجاح');
-            fetchOrders();
+            await fetchOrders();
         } catch (error) {
             if (error instanceof Error) {
                 toast.error(error.message);
             } else {
                 toast.error('فشل في تحديث حالة الدفع');
             }
+        } finally {
+            setLoading(false);
         }
     };
-
     const handleDownloadInvoice = async (orderId: number) => {
         try {
             const blob = await orderService.downloadInvoice(orderId);
@@ -227,7 +259,10 @@ const AdminOrders = () => {
                         </div>
                     ) : (
                         ordersData.orders.map((orderData) => (
-                            <div key={orderData.order.id} className="bg-white rounded-lg shadow p-6">
+                            <div 
+                            key={orderData.order.id} 
+                            className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition"
+                           >
                                 <div className="flex justify-between items-start mb-4">
                                     <div>
                                         <div className="flex items-center gap-2">
@@ -236,14 +271,30 @@ const AdminOrders = () => {
                                                 value={orderData.order.status}
                                                 onChange={(e) => handleStatusChange(orderData.order.id, e.target.value as OrderStatus)}
                                                 className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
-                                                    orderService.getOrderStatusColor(orderData.order.status)
+                                                    orderService.getOrderStatusColor(orderData.order.status as OrderStatus)
                                                 }`}
                                             >
-                                                {Object.values(OrderStatus).map((status) => (
-                                                    <option key={status} value={status}>
-                                                        {ORDER_STATUS_MAP[status]}
-                                                    </option>
-                                                ))}
+                                                <option value={orderData.order.status}>{ORDER_STATUS_MAP[orderData.order.status]}</option>
+                                                {Object.values(OrderStatus)
+                                                    .filter(status => {
+                                                        // فلترة الحالات المتاحة بناءً على الحالة الحالية
+                                                        const currentStatus = orderData.order.status as OrderStatus;
+                                                        switch (currentStatus) {
+                                                            case OrderStatus.Pending:
+                                                                return status === OrderStatus.Processing || status === OrderStatus.Cancelled;
+                                                            case OrderStatus.Processing:
+                                                                return status === OrderStatus.Shipped || status === OrderStatus.Cancelled;
+                                                            case OrderStatus.Shipped:
+                                                                return status === OrderStatus.Delivered || status === OrderStatus.Cancelled;
+                                                            default:
+                                                                return false;
+                                                        }
+                                                    })
+                                                    .map((status) => (
+                                                        <option key={status} value={status}>
+                                                            {ORDER_STATUS_MAP[status]}
+                                                        </option>
+                                                    ))}
                                             </select>
                                         </div>
                                         <div className="text-sm text-gray-600 mt-1">
@@ -254,13 +305,26 @@ const AdminOrders = () => {
                                         <div className="font-bold text-green-600">
                                             {formatCurrency(orderData.order.finalAmount)}
                                         </div>
-                                        <button
-                                            onClick={() => handleDownloadInvoice(orderData.order.id)}
-                                            className="text-blue-600 hover:text-blue-800 flex items-center gap-1 mt-2"
-                                        >
-                                            <Download className="h-4 w-4" />
-                                            تحميل الفاتورة
-                                        </button>
+                                        <div className="flex flex-col gap-2 mt-2">
+                                            <button
+                                                onClick={() => handleDownloadInvoice(orderData.order.id)}
+                                                className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                                            >
+                                                <Download className="h-4 w-4" />
+                                                تحميل الفاتورة
+                                            </button>
+
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation(); // منع انتشار الحدث لتجنب تداخل الأحداث
+                                                    handleViewOrderDetails(orderData.order.id);
+                                                }}
+                                                className="text-purple-600 hover:text-purple-800 flex items-center gap-1"
+                                            >
+                                                <ExternalLink className="h-4 w-4" />
+                                                عرض التفاصيل
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -293,14 +357,34 @@ const AdminOrders = () => {
                                             value={orderData.order.paymentStatus}
                                             onChange={(e) => handlePaymentStatusChange(orderData.order.id, e.target.value as PaymentStatus)}
                                             className={`text-sm ${
-                                                orderService.getPaymentStatusColor(orderData.order.paymentStatus)
+                                                orderService.getPaymentStatusColor(orderData.order.paymentStatus as PaymentStatus)
                                             }`}
                                         >
-                                            {Object.values(PaymentStatus).map((status) => (
-                                                <option key={status} value={status}>
-                                                    {getPaymentStatusLabel(status)}
-                                                </option>
-                                            ))}
+                                            <option value={orderData.order.paymentStatus}>
+                                                {getPaymentStatusLabel(orderData.order.paymentStatus)}
+                                            </option>
+                                            {Object.values(PaymentStatus)
+                                                .filter(status => {
+                                                    // فلترة حالات الدفع المتاحة بناءً على الحالة الحالية
+                                                    const currentStatus = orderData.order.paymentStatus as PaymentStatus;
+                                                    switch (currentStatus) {
+                                                        case PaymentStatus.Pending:
+                                                            return status === PaymentStatus.Processing || status === PaymentStatus.Failed;
+                                                        case PaymentStatus.Processing:
+                                                            return status === PaymentStatus.Completed || status === PaymentStatus.Failed;
+                                                        case PaymentStatus.Completed:
+                                                            return status === PaymentStatus.Refunded;
+                                                        case PaymentStatus.Failed:
+                                                            return status === PaymentStatus.Processing;
+                                                        default:
+                                                            return false;
+                                                    }
+                                                })
+                                                .map((status) => (
+                                                    <option key={status} value={status}>
+                                                        {getPaymentStatusLabel(status)}
+                                                    </option>
+                                                ))}
                                         </select>
                                     </div>
                                 </div>
@@ -313,7 +397,7 @@ const AdminOrders = () => {
                 {ordersData.pagination.totalPages > 1 && (
                     <div className="mt-6 flex justify-center gap-2">
                         <button
-                            onClick={() => handleFilterChange('page', filter.page! - 1)}
+                            onClick={() => handleFilterChange('page', Math.max(1, (filter.page || 1) - 1))}
                             disabled={ordersData.pagination.currentPage <= 1}
                             className="px-4 py-2 border rounded-lg disabled:opacity-50"
                         >
@@ -323,7 +407,7 @@ const AdminOrders = () => {
                             صفحة {ordersData.pagination.currentPage} من {ordersData.pagination.totalPages}
                         </span>
                         <button
-                            onClick={() => handleFilterChange('page', filter.page! + 1)}
+                            onClick={() => handleFilterChange('page', Math.min(ordersData.pagination.totalPages, (filter.page || 1) + 1))}
                             disabled={ordersData.pagination.currentPage >= ordersData.pagination.totalPages}
                             className="px-4 py-2 border rounded-lg disabled:opacity-50"
                         >

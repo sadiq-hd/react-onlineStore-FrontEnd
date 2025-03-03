@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useDebounce } from 'use-debounce';
 import { CreateProductDto, Product, ProductCategory } from '../types/product';
 import { productService } from '../services/productService';
+import { discountService } from '../services/discountService';
+
 import { useCart } from '../context/CartContext';
 import { useFavorites } from './useFavorites';
 
@@ -172,7 +174,8 @@ export const useProductManagement = () => {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const data = await productService.getAllProducts();
+      // استخدام getProductsWithDiscounts بدلاً من getAllProducts
+      const data = await productService.getProductsWithDiscounts();
       setProducts(data);
       setError(null);
     } catch (err) {

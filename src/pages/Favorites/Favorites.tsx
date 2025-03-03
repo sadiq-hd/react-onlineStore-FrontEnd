@@ -15,9 +15,34 @@ const NoImagePlaceholder = () => (
 );
 
 const Favorites: React.FC = () => {
-  const { state: { items, loading, error }, removeFromFavorites } = useFavorites();
+  const { state: { items, loading, error }, removeFromFavorites, refreshFavorites } = useFavorites();
   const [isRemoving, setIsRemoving] = useState<number | null>(null);
   const [imageErrors, setImageErrors] = useState<Set<number>>(new Set());
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(!!localStorage.getItem('token'));
+
+  // مراقبة تغيرات تسجيل الدخول
+  useEffect(() => {
+    const checkLoginStatus = () => {
+      const token = localStorage.getItem('token');
+      setIsLoggedIn(!!token);
+    };
+
+    // التحقق من حالة تسجيل الدخول عند تحميل المكون
+    checkLoginStatus();
+
+    // إعادة تحميل المفضلة عند تغير حالة تسجيل الدخول
+    if (isLoggedIn) {
+      refreshFavorites();
+    }
+
+    // إنشاء مستمع لأحداث تسجيل الدخول/الخروج
+    window.addEventListener('storage', checkLoginStatus);
+    
+    // تنظيف المستمع عند إزالة المكون
+    return () => {
+      window.removeEventListener('storage', checkLoginStatus);
+    };
+  }, [isLoggedIn, refreshFavorites]);
 
   const handleImageError = (itemId: number) => {
     setImageErrors(prev => new Set([...prev, itemId]));

@@ -6,12 +6,14 @@ interface PrivateRouteProps {
     children: React.ReactNode;
     adminOnly?: boolean;
     allowGuest?: boolean;
+    adminRedirect?: string; // خاصية جديدة للتوجيه
 }
 
 const PrivateRoute: FC<PrivateRouteProps> = ({ 
     children, 
     adminOnly = false,
-    allowGuest = false 
+    allowGuest = false,
+    adminRedirect
 }) => {
     const location = useLocation();
     const { isAuthenticated, isAdmin, isLoading, isGuest } = useAuth();
@@ -19,16 +21,24 @@ const PrivateRoute: FC<PrivateRouteProps> = ({
         path: location.pathname,
         isAdmin,
         adminOnly,
+        adminRedirect,
         user: JSON.parse(localStorage.getItem('currentUser') || 'null'),
         role: JSON.parse(localStorage.getItem('currentUser') || 'null')?.role
     });
-
+    console.log('PrivateRoute Props:', { adminOnly, allowGuest, adminRedirect });
+    console.log('User Auth Status:', { isAuthenticated, isAdmin, isGuest });
+    
     if (isLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
             </div>
         );
+    }
+
+    // توجيه المسؤول إلى صفحة مخصصة إذا تم تحديدها
+    if (adminRedirect && isAdmin) {
+        return <Navigate to={adminRedirect} replace />;
     }
 
     // السماح للزوار بمشاهدة السلة
@@ -40,6 +50,7 @@ const PrivateRoute: FC<PrivateRouteProps> = ({
     if (!isAuthenticated && !allowGuest) {
         return <Navigate to="/signin" state={{ from: location }} replace />;
     }
+    console.log('Should redirect admin?', { adminRedirect, isAdmin, shouldRedirect: adminRedirect && isAdmin });
 
     // للصفحات التي تتطلب صلاحيات المشرف
     if (adminOnly && !isAdmin) {
@@ -60,6 +71,7 @@ const PrivateRoute: FC<PrivateRouteProps> = ({
                     </button>
                 </div>
             </div>
+            
         );
     }
 

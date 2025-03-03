@@ -58,18 +58,27 @@ class OrderService {
 
     async createOrder(orderData: CreateOrderDto): Promise<OrderResponseDto> {
         try {
+            console.log('OrderService - creating order with data:', JSON.stringify(orderData));
+            
             const validationError = await this.validatePaymentDetails(
                 orderData.paymentMethod, 
                 orderData.paymentDetails
             );
             
             if (validationError) {
+                console.error('Validation error:', validationError);
                 throw new Error(validationError);
             }
     
+            console.log('Validation passed, sending to API');
+            
             const response = await api.post<OrderResponseDto>(this.baseUrl, orderData);
+            console.log('API response:', response.data);
             return response.data;
         } catch (error) {
+            console.error('Error in createOrder:', error);
+            
+       
             if (error instanceof AxiosError) {
                 if (error.response?.status === 400) {
                     throw new Error(error.response.data.detail || 'خطأ في البيانات المدخلة');
@@ -95,7 +104,7 @@ class OrderService {
         const token = localStorage.getItem('token');
         try {
             const response = await api.get<TopCustomer[]>(
-                `${this.baseUrl}/admin/top-customers`,
+                `${this.baseUrl}/top-customers`,
                 {
                     params: { limit },
                     headers: {
@@ -103,21 +112,34 @@ class OrderService {
                     }
                 }
             );
-            return response.data.map(customer => ({
-                ...customer,
-                totalSpent: Number(customer.totalSpent), // تأكد من أن المبلغ رقم
-                lastPurchase: new Date(customer.lastPurchase).toISOString() // تنسيق التاريخ
-            }));
+            
+            return response.data.map(customer => {
+                // التعامل مع التاريخ بحذر لتجنب الأخطاء
+                let lastPurchaseDate;
+                try {
+                    // التحقق من أن lastPurchase ليس null أو undefined
+                    if (customer.lastPurchase) {
+                        // استخدام طريقة آمنة لتحويل التاريخ
+                        lastPurchaseDate = new Date(customer.lastPurchase).toISOString();
+                    } else {
+                        // إذا كان التاريخ غير موجود، استخدم تاريخ اليوم
+                        lastPurchaseDate = new Date().toISOString();
+                    }
+                } catch (error) {
+                    console.error("Error parsing date:", error, customer.lastPurchase);
+                    // استخدم تاريخ اليوم في حالة حدوث خطأ
+                    lastPurchaseDate = new Date().toISOString();
+                }
+                
+                return {
+                    ...customer,
+                    totalSpent: Number(customer.totalSpent || 0), // التأكد من أن القيمة رقمية
+                    lastPurchase: lastPurchaseDate
+                };
+            });
         } catch (error) {
-            if (error instanceof AxiosError) {
-                if (error.response?.status === 401) {
-                    throw new Error('الرجاء تسجيل الدخول مرة أخرى');
-                }
-                if (error.response?.status === 403) {
-                    throw new Error('ليس لديك صلاحية للوصول إلى هذه البيانات');
-                }
-            }
-            throw new Error('حدث خطأ أثناء جلب بيانات العملاء الأكثر شراءً');
+            console.error("Error fetching top customers:", error);
+            throw error;
         }
     }
 
@@ -168,6 +190,31 @@ class OrderService {
             throw new Error('حدث خطأ أثناء جلب الطلبات');
         }
     }
+
+    async getAdminOrderDetails(id: number): Promise<OrderResponseDto> {
+        try {
+            const response = await api.get<{ order: OrderResponseDto, userInfo: any }>(`${this.baseUrl}/admin/orders/${id}`);
+            return response.data.order; // إرجاع بيانات الطلب فقط
+        } catch (error) {
+            console.error('Error fetching order details:', error);
+    
+            if (error instanceof AxiosError) {
+                switch (error.response?.status) {
+                    case 401:
+                        throw new Error('الرجاء تسجيل الدخول مرة أخرى');
+                    case 403:
+                        throw new Error('ليس لديك صلاحية للوصول إلى هذا الطلب');
+                    case 404:
+                        throw new Error('لم يتم العثور على الطلب');
+                    default:
+                        throw new Error(`حدث خطأ أثناء جلب بيانات الطلب: ${error.message}`);
+                }
+            }
+    
+            throw new Error('حدث خطأ غير متوقع أثناء جلب بيانات الطلب');
+        }
+    }
+    
 
     
  
@@ -309,20 +356,24 @@ class OrderService {
         dailyOrders: { date: string; count: number; revenue: number }[];
     }> {
         try {
-            const response = await api.get(`${this.baseUrl}/admin/statistics`, {
+            console.log("Fetching orders statistics with filter:", filter);
+            
+            // تصحيح المسار ليتطابق مع الباك إند
+            const response = await api.get(`${this.baseUrl}/statistics`, {
                 params: filter
             });
+            
+            console.log("Received orders statistics:", response.data);
+            
+            if (!response.data) {
+                console.warn("No data received from orders statistics API");
+                throw new Error("لم يتم استلام بيانات من واجهة برمجة التطبيقات");
+            }
+            
             return response.data;
         } catch (error) {
-            if (error instanceof AxiosError) {
-                if (error.response?.status === 401) {
-                    throw new Error('الرجاء تسجيل الدخول مرة أخرى');
-                }
-                if (error.response?.status === 403) {
-                    throw new Error('ليس لديك صلاحية للوصول إلى هذه البيانات');
-                }
-            }
-            throw new Error('حدث خطأ أثناء جلب إحصائيات الطلبات');
+            console.error("Error in getOrdersStatistics:", error);
+            throw error;
         }
     }
 

@@ -1,4 +1,6 @@
+
 // نوع الفئات المتاحة
+
 export const PRODUCT_CATEGORIES = [
   'سماعات',
   'ساعات',
@@ -28,6 +30,27 @@ export interface Product {
   images: ProductImage[];
   createdAt: string;  
   updatedAt: string;  
+
+  hasDiscount?: boolean;
+  discountedPrice?: number;
+  discountName?: string;
+  discountValue?: number;
+  discountType?: string;
+}
+
+export interface ProductWithDiscountDto {
+  id: number;
+  name: string;
+  description: string;
+  category: string;
+  price: number;
+  discountedPrice?: number;
+  stock: number;
+  images?: string[] | ProductImage[];
+  hasDiscount: boolean;
+  discountName?: string;
+  discountValue?: number;
+  discountType?: string;
 }
 
 export interface SalesAnalytics {

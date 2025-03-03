@@ -5,7 +5,7 @@ import { OrderResponseDto, OrderStatus, PaymentStatus } from '../../typerScript/
 import { orderService } from '../../services/orderService';
 import { toast } from 'react-toastify';
 
-const OrderDetails = () => {
+const AdminOrderDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const [order, setOrder] = useState<OrderResponseDto | null>(null);
@@ -22,15 +22,15 @@ const OrderDetails = () => {
         try {
             setLoading(true);
             setError(null);
-            
-            // استخدام الميثود الخاصة بالمستخدم العادي فقط
-            const data = await orderService.getOrder(Number(id));
+
+            // استدعاء تفاصيل الطلب الخاص بالأدمن فقط
+            const data = await orderService.getAdminOrderDetails(Number(id));
             setOrder(data);
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'فشل في تحميل تفاصيل الطلب';
             setError(errorMessage);
             toast.error(errorMessage);
-            navigate('/UserOrders', { replace: true });
+            navigate('/admin/AdminOrders', { replace: true });
         } finally {
             setLoading(false);
         }
@@ -38,17 +38,63 @@ const OrderDetails = () => {
 
     const handleCancelOrder = async () => {
         if (!order || !id || !window.confirm('هل أنت متأكد من إلغاء الطلب؟')) return;
-    
+
         try {
             setCancelLoading(true);
-            await orderService.cancelOrder(Number(id));
+            await orderService.updateOrderStatus(Number(id), OrderStatus.Cancelled);
             toast.success('تم إلغاء الطلب بنجاح');
             fetchOrderDetails();
         } catch (error) {
-            console.error("خطأ في إلغاء الطلب:", error);
             toast.error('فشل في إلغاء الطلب');
         } finally {
             setCancelLoading(false);
+        }
+    };
+
+    const handleUpdateOrderStatus = async (newStatus: OrderStatus) => {
+        if (!id || !order) return;
+
+        try {
+            await orderService.updateOrderStatus(Number(id), newStatus);
+            toast.success('تم تحديث حالة الطلب بنجاح');
+            fetchOrderDetails();
+        } catch (error) {
+            toast.error('فشل في تحديث حالة الطلب');
+        }
+    };
+    const handleUpdatePaymentStatus = async (newStatus: PaymentStatus) => {
+        if (!id || !order) return;
+    
+        try {
+            // إضافة تأكيد قبل التحديث
+            if (!window.confirm('هل أنت متأكد من تغيير حالة الدفع؟')) {
+                return;
+            }
+    
+            // استدعاء API لتحديث حالة الدفع
+            await orderService.updatePaymentStatus(Number(id), newStatus);
+            toast.success('تم تحديث حالة الدفع بنجاح');
+            
+            // إعادة تحميل بيانات الطلب
+            fetchOrderDetails();
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'فشل في تحديث حالة الدفع';
+            toast.error(errorMessage);
+        }
+    };
+
+    const getAvailablePaymentStatusOptions = (currentStatus: PaymentStatus): PaymentStatus[] => {
+        switch (currentStatus) {
+            case PaymentStatus.Pending:
+                return [PaymentStatus.Processing, PaymentStatus.Failed];
+            case PaymentStatus.Processing:
+                return [PaymentStatus.Completed, PaymentStatus.Failed];
+            case PaymentStatus.Completed:
+                return [PaymentStatus.Refunded];
+            case PaymentStatus.Failed:
+                return [PaymentStatus.Processing];
+            default:
+                return [];
         }
     };
 
@@ -93,7 +139,7 @@ const OrderDetails = () => {
                     <AlertTriangle className="h-16 w-16 mx-auto mb-4 text-yellow-500" />
                     <h2 className="text-2xl font-bold text-gray-900 mb-4">{error}</h2>
                     <button
-                        onClick={() => navigate('/UserOrders')}
+                        onClick={() => navigate('/admin/AdminOrders')}
                         className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                     >
                         العودة للطلبات
@@ -110,7 +156,7 @@ const OrderDetails = () => {
                     <AlertTriangle className="h-16 w-16 mx-auto mb-4 text-yellow-500" />
                     <h2 className="text-2xl font-bold text-gray-900 mb-4">لم يتم العثور على الطلب</h2>
                     <button
-                        onClick={() => navigate('/UserOrders')}
+                        onClick={() => navigate('/admin/AdminOrders')}
                         className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                     >
                         العودة للطلبات
@@ -125,12 +171,12 @@ const OrderDetails = () => {
             <div className="container mx-auto px-4">
                 <div className="mb-6 flex justify-between items-center">
                     <button
-                        onClick={() => navigate('/UserOrders')}
+                        onClick={() => navigate('/admin/AdminOrders')}
                         className="text-blue-600 hover:text-blue-700 flex items-center gap-2"
                     >
                         ← العودة للطلبات
                     </button>
-                    
+
                     <button
                         onClick={handleDownloadInvoice}
                         className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg transition-colors"
@@ -141,7 +187,6 @@ const OrderDetails = () => {
                 </div>
 
                 <div className="bg-white rounded-lg shadow-lg p-6">
-                    {/* Header */}
                     <div className="flex justify-between items-start mb-6">
                         <div>
                             <h1 className="text-2xl font-bold text-gray-900">
@@ -168,18 +213,7 @@ const OrderDetails = () => {
                         </div>
                     </div>
 
-                    {/* Alert for Pending Orders */}
-                    {orderService.canCancelOrder(order) && (
-                        <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                            <div className="flex items-center gap-2 text-yellow-800 font-medium">
-                                <AlertTriangle className="h-5 w-5" />
-                                يمكنك إلغاء الطلب
-                            </div>
-                            <p className="text-yellow-700 mt-1">
-                                يمكنك إلغاء الطلب في أي وقت قبل شحنه
-                            </p>
-                        </div>
-                    )}
+  
 
                     {/* Order Details Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -289,27 +323,90 @@ const OrderDetails = () => {
                     </div>
 
                     {/* زر إلغاء الطلب */}
+                    
                     {orderService.canCancelOrder(order) && (
-                        <div className="mt-8 border-t pt-6 flex justify-between items-center">
-                            <div className="text-sm text-gray-600">
-                                * لا يمكن إلغاء الطلب بعد شحنه
+    <div className="mt-8 border-t pt-6 flex justify-between items-center">
+        <div className="text-sm text-gray-600">
+            * لا يمكن إلغاء الطلب بعد شحنه
+        </div>
+        <button
+            onClick={handleCancelOrder}
+            disabled={cancelLoading}
+            className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 
+                      transition-colors disabled:opacity-50 disabled:cursor-not-allowed 
+                      flex items-center gap-2"
+        >
+            <XCircle className="h-5 w-5" />
+            {cancelLoading ? 'جاري الإلغاء...' : 'إلغاء الطلب'}
+        </button>
+    </div>
+)}
+
+                    {/* قسم تحديث حالة الطلب (للمسؤول فقط) */}
+                 
+                        <div className="mt-8 border-t pt-6">
+                            <h3 className="font-semibold mb-4">تحديث حالة الطلب</h3>
+                            <div className="flex gap-4">
+                                <button
+                                    onClick={() => handleUpdateOrderStatus(OrderStatus.Processing)}
+                                    disabled={order.status !== OrderStatus.Pending}
+                                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    بدء المعالجة
+                                </button>
+                                <button
+                                    onClick={() => handleUpdateOrderStatus(OrderStatus.Shipped)}
+                                    disabled={order.status !== OrderStatus.Processing}
+                                    className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    تم الشحن
+                                </button>
+                                <button
+                                    onClick={() => handleUpdateOrderStatus(OrderStatus.Delivered)}
+                                    disabled={order.status !== OrderStatus.Shipped}
+                                    className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    تم التوصيل
+                                </button>
+                                <button
+                                    onClick={() => handleUpdateOrderStatus(OrderStatus.Cancelled)}
+                                    disabled={order.status === OrderStatus.Delivered || order.status === OrderStatus.Cancelled}
+                                    className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    إلغاء الطلب
+                                </button>
                             </div>
-                            <button
-                                onClick={handleCancelOrder}
-                                disabled={cancelLoading}
-                                className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 
-                                        transition-colors disabled:opacity-50 disabled:cursor-not-allowed 
-                                        flex items-center gap-2"
-                            >
-                                <XCircle className="h-5 w-5" />
-                                {cancelLoading ? 'جاري الإلغاء...' : 'إلغاء الطلب'}
-                            </button>
                         </div>
-                    )}
+
+                        {/* قسم تحديث حالة الدفع */}
+<div className="mt-8 border-t pt-6">
+    <h3 className="font-semibold mb-4">تحديث حالة الدفع</h3>
+    <div className="flex flex-wrap gap-4">
+        {getAvailablePaymentStatusOptions(order.paymentStatus as PaymentStatus).map((status) => (
+            <button
+                key={status}
+                onClick={() => handleUpdatePaymentStatus(status)}
+                className={`px-4 py-2 rounded-lg text-white transition-colors ${
+                    status === PaymentStatus.Completed ? 'bg-green-600 hover:bg-green-700' :
+                    status === PaymentStatus.Processing ? 'bg-blue-600 hover:bg-blue-700' :
+                    status === PaymentStatus.Failed ? 'bg-red-600 hover:bg-red-700' :
+                    status === PaymentStatus.Refunded ? 'bg-purple-600 hover:bg-purple-700' :
+                    'bg-gray-600 hover:bg-gray-700'
+                }`}
+            >
+                {orderService.getPaymentStatusText(status)}
+            </button>
+        ))}
+        {getAvailablePaymentStatusOptions(order.paymentStatus as PaymentStatus).length === 0 && (
+            <p className="text-gray-600 italic">لا توجد تحديثات متاحة لحالة الدفع الحالية</p>
+        )}
+    </div>
+</div>
+                
                 </div>
             </div>
         </div>
     );
 };
 
-export default OrderDetails;
+export default AdminOrderDetails;

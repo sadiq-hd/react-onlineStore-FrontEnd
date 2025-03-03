@@ -1,11 +1,15 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import api from '../config/axios';
-import { CartItem, CartContextType, CartState } from '../typerScript/cart';
+import { 
+  CartItem, 
+  CartContextType, 
+  CartState, 
+  DiscountType,
+  calculateTotal  // استيراد الدالة من ملف التعريفات
+} from '../typerScript/cart';
 import { productService } from '../services/productService';
 
-const calculateTotal = (items: CartItem[]): number => {
-  return items.reduce((total, item) => total + (item.price * item.quantity), 0);
-};
+// حذف تعريف الدالة calculateTotal هنا لأننا قمنا باستيرادها من ملف التعريفات
 
 export const CartContext = createContext<CartContextType | undefined>(undefined);
 
@@ -15,7 +19,7 @@ type CartAction =
   | { type: 'SET_ERROR'; payload: string }
   | { type: 'CLEAR_ERROR' }
   | { type: 'RESET_CART' }
-  | { type: 'UPDATE_CART_ITEM'; payload: { productId: number; quantity: number } };
+  | { type: 'UPDATE_CART_ITEM'; payload: Partial<CartItem> & { productId: number } };
 
 const cartReducer = (state: CartState, action: CartAction): CartState => {
   switch (action.type) {
@@ -53,7 +57,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
     case 'UPDATE_CART_ITEM':
       const updatedItems = state.items.map(item =>
         item.productId === action.payload.productId
-          ? { ...item, quantity: action.payload.quantity }
+          ? { ...item, ...action.payload }
           : item
       );
       return {
@@ -77,24 +81,55 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const fetchCart = async () => {
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
-      const cartItems = await productService.getCart();
-      dispatch({ type: 'SET_CART', payload: cartItems });
+      const response = await api.get('/api/Cart');
+      
+      // التأكد من أن البيانات المستلمة تحتوي على مصفوفة items
+      if (response.data && response.data.items && Array.isArray(response.data.items)) {
+        dispatch({ type: 'SET_CART', payload: response.data.items });
+      } else {
+        // إذا كانت البيانات المستلمة ليست بالتنسيق المتوقع
+        dispatch({ type: 'SET_CART', payload: [] });
+      }
     } catch (error: any) {
       const errorMessage = error.response?.data || 'فشل في تحميل السلة';
       dispatch({ type: 'SET_ERROR', payload: errorMessage });
     }
   };
 
-  const addToCart = async (productId: number, quantity: number) => {
+  const addToCart = async (productId: number, quantity: number): Promise<void> => {
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
-      await api.post('/api/Cart/add', { productId, quantity });
-      // تحديث مؤقت للسلة محلياً
+      
+      // جلب تفاصيل المنتج مع الخصم
+      const product = await productService.getProductById(productId);
+      
+      // تحويل نوع الخصم إلى النوع المحدد
+      const discountType: DiscountType | undefined = 
+        product.discountType === 'Percentage' || product.discountType === 'FixedAmount'
+          ? product.discountType
+          : undefined;
+
+      await api.post('/api/Cart/add', { 
+        productId, 
+        quantity
+      });
+      
       dispatch({
         type: 'UPDATE_CART_ITEM',
-        payload: { productId, quantity: (state.items.find(item => item.productId === productId)?.quantity || 0) + quantity }
+        payload: { 
+          productId, 
+          quantity: (state.items.find(item => item.productId === productId)?.quantity || 0) + quantity,
+          name: product.name,
+          price: product.price,
+          hasDiscount: product.hasDiscount,
+          discountedPrice: product.discountedPrice,
+          discountValue: product.discountValue,
+          discountType,
+          discountName: product.discountName,
+          originalPrice: product.price
+        }
       });
-      // ثم جلب البيانات المحدثة من السيرفر
+      
       await fetchCart();
     } catch (error: any) {
       const errorMessage = error.response?.data || error.message || 'فشل في إضافة المنتج';
@@ -213,10 +248,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       resetCart,
       clearCart: async () => {
         await resetCart();
-      }, // Add this line
+      }
     }}>
-
-   
       {children}
     </CartContext.Provider>
   );

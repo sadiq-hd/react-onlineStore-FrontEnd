@@ -51,6 +51,7 @@ export interface CreateOrderDto {
         productId: number;
         quantity: number;
     }[];
+    promoCode?: string;
 }
 
 
@@ -89,6 +90,10 @@ export interface OrderResponseDto {
         userEmail: string;
         userPhone: string;
     };
+    discountAmount?: number; // إجمالي قيمة الخصم للطلب
+    promoCode?: string; // كود الخصم المستخدم
+    promoCodeId?: number; // معرف كود الخصم المستخدم
+    hasDiscount?: boolean; // مؤشر عما إذا كان الطلب يحتوي على خصم
 }
 
 export interface OrderItemDto {
@@ -96,10 +101,18 @@ export interface OrderItemDto {
     productName: string;
     quantity: number;
     price: number;
+    originalPrice?: number; // السعر الأصلي قبل الخصم
+    discountedPrice?: number; // السعر بعد الخصم
+    discountAmount?: number; // مبلغ الخصم للوحدة
     total: number;
     vatAmount: number;
     totalWithVat: number;
+    hasDiscount?: boolean; // مؤشر لوجود خصم على المنتج
+    discountType?: string; // نوع الخصم (نسبة مئوية أو مبلغ ثابت)
+    discountValue?: number; // قيمة الخصم
+    discountName?: string; // اسم الخصم (إذا كان متاحًا)
 }
+
 
 
 
@@ -132,6 +145,8 @@ export interface AdminOrderResponse {
         totalAmount: number;
         deliveryFee: number;
         finalAmount: number;
+        discountAmount?: number; // إضافة حقل الخصم
+        hasDiscount?: boolean; // مؤشر وجود خصم
         paymentStatus: PaymentStatus;
         paymentMethod: PaymentMethodType;
         items: Array<OrderItemDto>;
@@ -254,53 +269,7 @@ export const PAYMENT_METHODS: PaymentMethodConfig[] = [
            }
        ]
    },
-   {
-       id: PaymentMethodType.MADA,
-       label: 'مدى',
-       icon: '💳',
-       fields: [
-           {
-               name: 'cardNumber',
-               label: 'رقم البطاقة',
-               type: 'text',
-               placeholder: 'XXXX-XXXX-XXXX-XXXX',
-               validation: (value: string) => {
-                   const cleaned = value.replace(/\s/g, '');
-                   return cleaned.length === 16 && CARD_PATTERNS.mada.test(cleaned);
-               }
-           },
-           {
-               name: 'expiryDate',
-               label: 'تاريخ الانتهاء',
-               type: 'text',
-               placeholder: 'MM/YY',
-               validation: (value: string) => {
-                   const regex = /^([0-9]{2})\/([0-9]{2})$/;
-                   if (!regex.test(value)) {
-                       return false;
-                   }
-
-                   const [month, year] = value.split('/').map(num => parseInt(num));
-                   if (month < 1 || month > 12) {
-                       return false;
-                   }
-
-                   const now = new Date();
-                   const currentYear = now.getFullYear() % 100;
-                   const currentMonth = now.getMonth() + 1;
-
-                   return year >= currentYear && (year > currentYear || month >= currentMonth);
-               }
-           },
-           {
-               name: 'cvv',
-               label: 'رمز الحماية',
-               type: 'password',
-               placeholder: 'XXX',
-               validation: (value: string) => /^[0-9]{3}$/.test(value)
-           }
-       ]
-   },
+   
    {
        id: PaymentMethodType.APPLE_PAY,
        label: 'آبل باي',

@@ -24,6 +24,12 @@ import AdminOrders from './pages/orderes/AdminOrders';
 import PrivateRoute from './PrivateRoute';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import ProductDetailsPage from './pages/ProductDetailsPage';
+import AdminOrderDetails from './pages/orderes/AdminOrderDetails';
+import { User } from 'lucide-react';
+import DiscountsManagement from './pages/DiscountsManagement';
+
+// صفحات الخصومات وأكواد الخصم الجديدة
 
 
 const App: FC = () => {
@@ -42,7 +48,7 @@ const App: FC = () => {
             draggable
             pauseOnHover
           />
-
+    
           <Header />
           
           <main className="container mx-auto px-4 py-8">
@@ -54,7 +60,7 @@ const App: FC = () => {
               <Route path="/FAQs" element={<FAQs />} />
               <Route path="/register" element={<Register />} />
               <Route path="/signin" element={<Signin />} />
-              
+              <Route path="/product/:id" element={<ProductDetailsPage/>}/>              
               {/* مسارات تسمح للزوار */}
               <Route
                 path="/cart"
@@ -140,15 +146,28 @@ const App: FC = () => {
                   </PrivateRoute>
                 }
               />
-
+              
               <Route
-                path="/admin/orders/:id"
+                path="/admin/AdminOrderDetails/:id"
                 element={
                   <PrivateRoute adminOnly>
-                    <OrderDetails />
+                    <AdminOrderDetails />
                   </PrivateRoute>
                 }
               />
+
+<Route
+                path="/admin/DiscountsManagement"
+                element={
+                  <PrivateRoute adminOnly>
+                    <DiscountsManagement />
+                  </PrivateRoute>
+                }
+              />
+              
+         
+              
+         
             </Routes>
           </main>
 

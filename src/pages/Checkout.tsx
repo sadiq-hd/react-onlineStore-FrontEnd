@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { orderService } from '../services/orderService';
@@ -33,6 +33,55 @@ const Checkout: React.FC = () => {
         }
     }, [cartState.items.length, navigate]);
 
+    // حساب المبالغ باستخدام useMemo لتحسين الأداء
+    const { 
+        originalSubTotal, 
+        discountAmount, 
+        subTotalAfterDiscount, 
+        vatAmount, 
+        deliveryFee, 
+        finalAmount 
+    } = useMemo(() => {
+        // المجموع الأصلي قبل الخصم
+        const originalSubTotal = cartState.items.reduce(
+            (total, item) => total + (item.price * item.quantity), 0
+        );
+        
+        // حساب إجمالي الخصم
+        const discountAmount = cartState.items.reduce((total, item) => {
+            if (item.hasDiscount && item.discountedPrice !== undefined) {
+                return total + ((item.price - item.discountedPrice) * item.quantity);
+            }
+            return total;
+        }, 0);
+        
+        // المجموع بعد الخصم (هذا المبلغ يشمل الضريبة)
+        const subTotalAfterDiscount = cartState.items.reduce((total, item) => {
+            const priceToUse = item.hasDiscount && item.discountedPrice !== undefined
+                ? item.discountedPrice
+                : item.price;
+            return total + (priceToUse * item.quantity);
+        }, 0);
+        
+        // استخراج قيمة الضريبة (15%) من السعر بعد الخصم (ضريبة متضمنة في السعر)
+        const vatAmount = Number(((subTotalAfterDiscount * 0.15) / 1.15).toFixed(2));
+        
+        // رسوم الشحن الثابتة
+        const deliveryFee = 25;
+        
+        // السعر النهائي = المجموع بعد الخصم (بما في ذلك الضريبة) + رسوم الشحن
+        const finalAmount = Number((subTotalAfterDiscount + deliveryFee).toFixed(2));
+        
+        return { 
+            originalSubTotal: Number(originalSubTotal.toFixed(2)), 
+            discountAmount: Number(discountAmount.toFixed(2)), 
+            subTotalAfterDiscount: Number(subTotalAfterDiscount.toFixed(2)), 
+            vatAmount, 
+            deliveryFee, 
+            finalAmount 
+        };
+    }, [cartState.items]);
+
     const handleSubmit = async () => {
         if (!address || !paymentMethod) {
             toast.error('يرجى إكمال جميع البيانات المطلوبة');
@@ -40,6 +89,15 @@ const Checkout: React.FC = () => {
         }
         
         setLoading(true);
+        
+        // التحقق من صحة بيانات الدفع
+        if (paymentMethod === PaymentMethodType.CREDIT_CARD || paymentMethod === PaymentMethodType.MADA) {
+            if (!paymentDetails.cardNumber || !paymentDetails.expiryDate || !paymentDetails.cvv) {
+                toast.error('يرجى إكمال جميع بيانات البطاقة');
+                setLoading(false);
+                return;
+            }
+        }
         
         const orderData: CreateOrderDto = {
             address: {
@@ -53,20 +111,22 @@ const Checkout: React.FC = () => {
             items: cartState.items.map(item => ({
                 productId: item.productId,
                 quantity: item.quantity
+                // لا ترسل معلومات الخصم هنا - الخادم سيتعامل معها
             })),
-            paymentMethod: 6 as unknown as PaymentMethodType, // تعديل هنا
-            paymentDetails: {
-                phone: address.phoneNumber
-            }
+            paymentMethod: paymentMethod,
+            paymentDetails: paymentMethod === PaymentMethodType.CASH_ON_DELIVERY 
+                ? { phone: address.phoneNumber } 
+                : paymentDetails
         };
         
         try {
-            console.log('Sending order data:', orderData);
+            console.log('Sending order data:', JSON.stringify(orderData, null, 2));
             const order = await orderService.createOrder(orderData);
             await clearCart();
             toast.success('تم إنشاء الطلب بنجاح');
             navigate(`/orders/${order.id}`);
         } catch (error: any) {
+            console.error('Order creation error details:', error.response?.data);
             toast.error(error.message || 'حدث خطأ في إنشاء الطلب');
         } finally {
             setLoading(false);
@@ -86,10 +146,11 @@ const Checkout: React.FC = () => {
                 return (
                     <OrderSummary
                         cartItems={cartState.items}
-                        subTotal={cartState.total}
-                        vatAmount={cartState.total * 0.15}
-                        deliveryFee={25}
-                        total={cartState.total * 1.15 + 25}
+                        subTotal={subTotalAfterDiscount}
+                        discountAmount={discountAmount}
+                        vatAmount={vatAmount}
+                        deliveryFee={deliveryFee}
+                        total={finalAmount}
                         onNext={() => setStep(2)}
                     />
                 );
@@ -123,12 +184,12 @@ const Checkout: React.FC = () => {
                         cartItems={cartState.items}
                         address={address}
                         onAddressChange={handleAddressChange}
-                        subTotal={cartState.total}
-                        vatAmount={cartState.total * 0.15}
-                        deliveryFee={25}
-                        total={cartState.total * 1.15 + 25}
-                        totalAmount={cartState.total * 1.15}
-                        finalAmount={cartState.total * 1.15 + 25}
+                        subTotal={subTotalAfterDiscount}
+                        discountAmount={discountAmount}
+                        vatAmount={vatAmount}
+                        deliveryFee={deliveryFee}
+                        totalAmount={subTotalAfterDiscount}
+                        finalAmount={finalAmount}
                         paymentMethod={paymentMethod}
                         paymentDetails={paymentDetails}
                         loading={loading}

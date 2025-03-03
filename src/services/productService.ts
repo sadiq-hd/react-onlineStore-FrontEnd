@@ -4,9 +4,11 @@ import {
  CreateProductDto, 
  SearchProductsParams, 
  ProductImage,
-
+ ProductWithDiscountDto ,
+ ProductCategory,   
 } from '../types/product';
 import { CartItem } from '../typerScript/cart';
+import api from '../config/axios';
 
 const API_URL = 'https://localhost:5000/api';
 const IMAGE_URL = 'https://localhost:5000';
@@ -130,11 +132,11 @@ getSalesStats: async (period: 'day' | 'week' | 'month' | 'year' = 'month'): Prom
 
 
 
-getTopSellingProducts: async (limit: number = 5): Promise<TopProduct[]> => {
+async getTopSellingProducts(limit: number = 5): Promise<TopProduct[]> {
   const token = localStorage.getItem('token');
   try {
     const response = await axios.get<TopProduct[]>(
-      `${API_URL}/products/top-selling`,
+      `${API_URL}/Products/top-selling`,
       {
         params: { limit },
         headers: {
@@ -142,33 +144,32 @@ getTopSellingProducts: async (limit: number = 5): Promise<TopProduct[]> => {
         }
       }
     );
+    
     return response.data;
   } catch (error) {
     console.error('Error fetching top selling products:', error);
     throw error;
   }
 },
-
 // في ملف productService.ts
-getSalesAnalytics: async (startDate?: string, endDate?: string) => {
+async getSalesAnalytics(period: string = 'month'): Promise<SalesAnalytics[]> {
   const token = localStorage.getItem('token');
   try {
-      console.log('Fetching sales analytics...'); // للتتبع
-      const response = await axios.get(`${API_URL}/products/sales-analytics`, {
-          params: { startDate, endDate },
-          headers: {
-              'Authorization': `Bearer ${token}`
-          }
-      });
-      console.log('Sales analytics response:', response.data); // للتتبع
-      return response.data;
-  } catch (error) {
-      console.error('Error fetching sales analytics:', error);
-      if (axios.isAxiosError(error)) {
-          console.error('Response data:', error.response?.data);
-          console.error('Response status:', error.response?.status);
+    console.log("Fetching sales analytics for period:", period);
+    
+    // تصحيح المسار ليتطابق مع الباك إند
+    const response = await axios.get<SalesAnalytics[]>(`${API_URL}/Products/sales-analytics`, {
+      params: { period },
+      headers: {
+        'Authorization': `Bearer ${token}`
       }
-      throw error;
+    });
+    
+    console.log("Received sales analytics:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error in getSalesAnalytics:", error);
+    throw error;
   }
 },
 
@@ -189,6 +190,7 @@ getDashboardStats: async (): Promise<DashboardStats> => {
     throw error;
   }
 },
+
 
 
 // المنتجات منخفضة المخزون
@@ -242,7 +244,47 @@ getLowStockProducts: async (threshold: number = 10): Promise<Product[]> => {
      throw error;    
    }
  },
- 
+
+ getProductsWithDiscounts: async (): Promise<Product[]> => {
+  try {
+    const response = await axios.get<ProductWithDiscountDto[]>(`${API_URL}/products/with-discounts`);
+    console.log('Products with discounts response:', response.data);
+    
+    return response.data.map((product) => ({
+      id: product.id,
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      stock: product.stock,
+      category: product.category as ProductCategory,
+      images: Array.isArray(product.images) ? product.images.map((img: string | ProductImage) => {
+        if (typeof img === 'string') {
+          return {
+            id: 0,
+            productId: product.id,
+            imageUrl: img.startsWith('/') ? `${IMAGE_URL}${img}` : `${IMAGE_URL}/images/${img}`
+          };
+        } else {
+          return {
+            id: img.id || 0,
+            productId: product.id,
+            imageUrl: img.imageUrl.startsWith('/') ? `${IMAGE_URL}${img.imageUrl}` : `${IMAGE_URL}/images/${img.imageUrl}`
+          };
+        }
+      }) : [],
+      hasDiscount: product.hasDiscount,
+      discountedPrice: product.discountedPrice,
+      discountName: product.discountName,
+      discountValue: product.discountValue,
+      discountType: product.discountType,
+      createdAt: '',  // قيمة افتراضية
+      updatedAt: '',  // قيمة افتراضية
+    }));
+  } catch (error) {
+    console.error('Error fetching products with discounts:', error);
+    throw error;
+  }
+},
  // جلب منتج بواسطة المعرف
  getProductById: async (id: number): Promise<Product> => {
    try {
@@ -296,6 +338,8 @@ getLowStockProducts: async (threshold: number = 10): Promise<Product[]> => {
      throw error;
    }
  },
+
+ 
   
  // إضافة صورة لمنتج
  addProductImage: async (id: number, imageFile: File): Promise<ProductImage> => {

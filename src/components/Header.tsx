@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import reactLogo from '../assets/react.svg';
+import headerlogo from '../assets/headerlogo.png';
 import { useCart } from '../context/CartContext';
 import { useFavorites } from '../context/FavoritesContext';
 
@@ -48,7 +48,7 @@ const Header: React.FC = () => {
           {/* Logo Section */}
           <div className="flex items-center">
             <img 
-              src={reactLogo}
+              src={headerlogo}
               alt="Logo" 
               className="h-10 w-auto animate-spin-slow"
             />
@@ -138,11 +138,11 @@ const Header: React.FC = () => {
                         الملف الشخصي
                       </Link>
 
-                      {isUser && (
+                      
                         <Link to="/favorites" onClick={closeMenus} className="block px-4 py-2 text-gray-800 hover:bg-purple-500">
                           المفضلة
                         </Link>
-                      )}
+                      
 
                       {isAdmin && (
                         <>
@@ -156,6 +156,9 @@ const Header: React.FC = () => {
                           <Link to="/admin/AdminOrders" onClick={closeMenus} className="block px-4 py-2 text-gray-800 hover:bg-purple-500">
                             طلبات الشراء
                           </Link>
+                          <Link to="/admin/DiscountsManagement" onClick={closeMenus} className="block px-4 py-2 text-gray-800 hover:bg-purple-500">
+                      ادارة التخفيضات
+                    </Link>
                         </>
                       )}
                       
@@ -230,12 +233,12 @@ const Header: React.FC = () => {
                   الملف الشخصي
                 </Link>
 
-                {isUser && (
+               
                   <Link to="/favorites" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">
                     المفضلة
                   </Link>
                   
-                )}
+               
 
                 {isAdmin && (
                   <>
@@ -248,6 +251,10 @@ const Header: React.FC = () => {
                     <Link to="/admin/AdminOrders" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">
                       طلبات الشراء
                     </Link>
+                    <Link to="/admin/DiscountsManagement" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">
+                      ادارة التخفيضات
+                    </Link>
+                    
                   </>
                 )}
 
