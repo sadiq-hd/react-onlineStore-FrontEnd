@@ -301,9 +301,9 @@ const handleAddressFormSubmit = async (e: React.FormEvent) => {
       setPasswordLoading(true);
       await authService.changePassword({
         currentPassword: passwordData.currentPassword,
-        newPassword: passwordData.newPassword
+        newPassword: passwordData.newPassword,
+        confirmPassword: passwordData.confirmPassword
       });
-      
       // إعادة تعيين نموذج كلمة المرور
       setPasswordData({
         currentPassword: '',

@@ -9,7 +9,9 @@ interface ProductFormProps {
     isLoading: boolean;
 }
 
+// const API_URL = 'https://localhost:5000';
 const API_URL = 'https://localhost:5000';
+
 
 const getImageUrl = (imageUrl: string) => {
     if (imageUrl.startsWith('http')) {

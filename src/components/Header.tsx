@@ -43,6 +43,9 @@ const Header: React.FC = () => {
 
   return (
     <nav className="bg-gradient-to-r from-purple-600 to-purple-500 sticky top-0 z-50">
+                <div className="bg-red-500 text-white text-center py-2">
+  هذا الموقع تجريبي وليس متجرًا فعليًا. جميع العمليات هنا للاختبار فقط. جميع البيانات محمية ومشفرة 
+</div>
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex justify-between items-center h-20">
           {/* Logo Section */}
@@ -53,6 +56,7 @@ const Header: React.FC = () => {
               className="h-10 w-auto animate-spin-slow"
             />
           </div>
+
 
           {/* Main Navigation - Desktop */}
           <div className="hidden md:flex items-center justify-center flex-1">

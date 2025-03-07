@@ -28,6 +28,7 @@ import ProductDetailsPage from './pages/ProductDetailsPage';
 import AdminOrderDetails from './pages/orderes/AdminOrderDetails';
 import { User } from 'lucide-react';
 import DiscountsManagement from './pages/DiscountsManagement';
+import ForgotPassword from './pages/auth/ForgotPassword';
 
 // صفحات الخصومات وأكواد الخصم الجديدة
 
@@ -60,6 +61,7 @@ const App: FC = () => {
               <Route path="/FAQs" element={<FAQs />} />
               <Route path="/register" element={<Register />} />
               <Route path="/signin" element={<Signin />} />
+              <Route path="/forgotpassword" element={<ForgotPassword/>} />
               <Route path="/product/:id" element={<ProductDetailsPage/>}/>              
               {/* مسارات تسمح للزوار */}
               <Route

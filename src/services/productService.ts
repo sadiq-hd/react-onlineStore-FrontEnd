@@ -10,8 +10,10 @@ import {
 import { CartItem } from '../typerScript/cart';
 import api from '../config/axios';
 
-const API_URL = 'https://localhost:5000/api';
+// const API_URL = 'https://localhost:5000/api';
 const IMAGE_URL = 'https://localhost:5000';
+const API_URL = 'https://localhost:5000/api';
+
 
 export interface ProductStats {
   totalProducts: number;

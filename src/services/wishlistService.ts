@@ -1,9 +1,11 @@
 import axios from 'axios';
 import { handleAxiosError } from '../components/handleAxiosError';
 
-const API_URL = 'https://localhost:5000/api';
+// const API_URL = 'https://localhost:5000/api';
 const IMAGE_URL = 'https://localhost:5000';
 const FALLBACK_IMAGE = 'https://via.placeholder.com/200x200?text=صورة+غير+متوفرة';
+const API_URL = 'https://localhost:5000/api';
+
 
 export interface FavoriteItem {
     id: number;

@@ -11,7 +11,9 @@ interface ProductImageCarouselProps {
     productName: string;
 }
 
-const API_URL = 'https://localhost:5000'; // تغيير الـ port إلى 5000
+// const API_URL = 'https://localhost:5000'; // تغيير الـ port إلى 5000
+const API_URL = 'https://localhost:5000';
+
 
 const ProductImageCarousel: React.FC<ProductImageCarouselProps> = ({ images, productName }) => {
     const [currentIndex, setCurrentIndex] = useState<number>(0);
