@@ -13,7 +13,6 @@ const Header: React.FC = () => {
   const cartItemsCount = state.items.reduce((total, item) => total + item.quantity, 0);
   const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
   const isAdmin = currentUser?.role === 'admin';
-  const isUser = currentUser?.role === 'user';
 
   const closeMenus = () => {
     setIsMenuOpen(false);

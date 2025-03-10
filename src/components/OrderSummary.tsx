@@ -24,12 +24,15 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
     // حساب ما إذا كان هناك أي منتج به خصم
     const hasAnyDiscount = cartItems.some(item => item.hasDiscount && item.discountedPrice !== undefined);
 
-    // دالة لتنسيق المبالغ
+    // دالة لتنسيق المبالغ (بدون رمز العملة لأننا سنستخدم الصورة)
     const formatCurrency = (amount: number) => 
         new Intl.NumberFormat('ar-SA', {
-            style: 'currency',
-            currency: 'SAR'
+            style: 'decimal',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
         }).format(amount);
+
+    // تم حذف مكون PriceWithRiyal لأنه غير مستخدم
 
     return (
         <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
@@ -46,13 +49,20 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
                             {/* عرض معلومات الخصم إذا كان متوفرًا */}
                             {item.hasDiscount && item.discountedPrice !== undefined && (
                                 <div className="text-xs text-green-600 mt-1">
-                                    <span className="line-through text-gray-500 ml-1">{item.price} ريال</span>
-                                    {item.discountedPrice} ريال
+                                    <span className="line-through text-gray-500 ml-1 flex items-center">
+                                        {item.price} <img src={SaudiRiyal} alt="ريال سعودي" className="w-3 h-3 mr-1" />
+                                    </span>
+                                    <span className="flex items-center">
+                                        {item.discountedPrice} <img src={SaudiRiyal} alt="ريال سعودي" className="w-3 h-3 mr-1" />
+                                    </span>
                                     {item.discountType && item.discountValue && (
                                         <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full mr-2">
                                             {item.discountType === 'Percentage' 
                                                 ? `${item.discountValue}%` 
-                                                : `خصم ${item.discountValue} ريال`}
+                                                : `خصم ${item.discountValue} `}
+                                            {item.discountType !== 'Percentage' && (
+                                                <img src={SaudiRiyal} alt="ريال سعودي" className="w-3 h-3 inline" />
+                                            )}
                                         </span>
                                     )}
                                 </div>
@@ -62,17 +72,20 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
                             {/* عرض السعر مع الخصم أو بدونه */}
                             {item.hasDiscount && item.discountedPrice !== undefined ? (
                                 <div>
-                                    <span className="line-through text-gray-500 block text-sm">
+                                    <div className="line-through text-gray-500 text-sm flex justify-end items-center">
                                         {formatCurrency(item.price * item.quantity)}
-                                    </span>
-                                    <span className="font-medium text-green-600">
+                                        <img src={SaudiRiyal} alt="ريال سعودي" className="w-3 h-3 mr-1" />
+                                    </div>
+                                    <div className="font-medium text-green-600 flex justify-end items-center">
                                         {formatCurrency(item.discountedPrice * item.quantity)}
-                                    </span>
+                                        <img src={SaudiRiyal} alt="ريال سعودي" className="w-3 h-3 mr-1" />
+                                    </div>
                                 </div>
                             ) : (
-                                <span className="font-medium">
+                                <div className="font-medium flex justify-end items-center">
                                     {formatCurrency(item.price * item.quantity)}
-                                </span>
+                                    <img src={SaudiRiyal} alt="ريال سعودي" className="w-3 h-3 mr-1" />
+                                </div>
                             )}
                         </div>
                     </div>
@@ -81,28 +94,43 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
                 <div className="space-y-2 border-t pt-4">
                     <div className="flex justify-between text-sm text-gray-600">
                         <span>المجموع الفرعي</span>
-                        <span>{formatCurrency(subTotal)}</span>
+                        <div className="flex items-center">
+                            {formatCurrency(subTotal)}
+                            <img src={SaudiRiyal} alt="ريال سعودي" className="w-3 h-3 mr-1" />
+                        </div>
                     </div>
                     
                     {/* عرض صف الخصم فقط إذا كان هناك خصم */}
                     {hasAnyDiscount && (
                         <div className="flex justify-between text-sm text-green-600 font-medium">
                             <span>إجمالي الخصومات</span>
-                            <span>- {formatCurrency(discountAmount)}</span>
+                            <div className="flex items-center">
+                                - {formatCurrency(discountAmount)}
+                                <img src={SaudiRiyal} alt="ريال سعودي" className="w-3 h-3 mr-1" />
+                            </div>
                         </div>
                     )}
                     
                     <div className="flex justify-between text-sm text-gray-600">
-    <span>ضريبة القيمة المضافة (متضمنة في السعر)</span>
-    <span>{formatCurrency(vatAmount)}</span>
-</div>
+                        <span>ضريبة القيمة المضافة (متضمنة في السعر)</span>
+                        <div className="flex items-center">
+                            {formatCurrency(vatAmount)}
+                            <img src={SaudiRiyal} alt="ريال سعودي" className="w-3 h-3 mr-1" />
+                        </div>
+                    </div>
                     <div className="flex justify-between text-sm text-gray-600">
                         <span>رسوم التوصيل</span>
-                        <span>{formatCurrency(deliveryFee)}</span>
+                        <div className="flex items-center">
+                            {formatCurrency(deliveryFee)}
+                            <img src={SaudiRiyal} alt="ريال سعودي" className="w-3 h-3 mr-1" />
+                        </div>
                     </div>
                     <div className="border-t pt-2 flex justify-between items-center font-bold">
                         <span>الإجمالي النهائي</span>
-                        <span>{formatCurrency(total)}</span>
+                        <div className="flex items-center">
+                            {formatCurrency(total)}
+                            <img src={SaudiRiyal} alt="ريال سعودي" className="w-4 h-4 mr-1" />
+                        </div>
                     </div>
                 </div>
             </div>

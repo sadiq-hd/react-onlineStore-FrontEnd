@@ -26,7 +26,6 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import ProductDetailsPage from './pages/ProductDetailsPage';
 import AdminOrderDetails from './pages/orderes/AdminOrderDetails';
-import { User } from 'lucide-react';
 import DiscountsManagement from './pages/DiscountsManagement';
 import ForgotPassword from './pages/auth/ForgotPassword';
 

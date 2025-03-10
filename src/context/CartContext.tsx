@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import api, { handleApiError } from '../config/apiConfig';
+import api from '../config/apiConfig';
 import { 
   CartItem, 
   CartContextType, 

@@ -134,80 +134,7 @@ const DeliveryAddressForm: React.FC<DeliveryAddressFormProps> = ({ orderId, onSu
     }
   };
 
-  // إضافة عنوان جديد
-  const handleAddNewAddress = async () => {
-    // التحقق من صحة البيانات
-    if (fullName.length > 100 || city.length > 50 || street.length > 100 || 
-        (buildingNumber && buildingNumber.length > 20) || 
-        (additionalDetails && additionalDetails.length > 200)) {
-      toast.error('الرجاء التحقق من طول البيانات المدخلة');
-      return;
-    }
-  
-    if (!/^05\d{8}$/.test(phoneNumber)) {
-      toast.error('رقم الهاتف غير صحيح');
-      return;
-    }
-    
-    try {
-      setIsSubmitting(true);
-      
-      const newAddress = {
-        fullName: fullName.trim(),
-        phoneNumber: phoneNumber.trim(),
-        city: city.trim(),
-        street: street.trim(),
-        buildingNumber: buildingNumber?.trim(),
-        additionalDetails: additionalDetails?.trim(),
-        isDefault: isDefault
-      };
-      
-      // حفظ العنوان في قاعدة البيانات
-      const savedAddress = await addressService.addAddress({
-        ...newAddress,
-        orderId
-      });
-      
-      // تحديث قائمة العناوين المحفوظة
-      if (isDefault) {
-        // إذا كان العنوان الجديد هو الافتراضي، حدث حالة كل العناوين
-        setSavedAddresses(prev => [
-          ...prev.map(addr => ({ ...addr, isDefault: false })),
-          savedAddress
-        ]);
-      } else {
-        setSavedAddresses(prev => [...prev, savedAddress]);
-      }
-      
-      // اختر العنوان الجديد
-      setSelectedAddressId(savedAddress.id);
-      setUseSavedAddress(true);
-      
-      // إعادة تعيين نموذج العنوان الجديد
-      resetNewAddressForm();
-      
-      toast.success('تم إضافة العنوان بنجاح');
-      
-    } catch (error: any) {
-      toast.error(error.message || 'فشل في إضافة العنوان');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // إعادة تعيين نموذج العنوان الجديد
-  const resetNewAddressForm = () => {
-    setFullName('');
-    setPhoneNumber('');
-    setCity('');
-    setStreet('');
-    setBuildingNumber('');
-    setAdditionalDetails('');
-    setIsDefault(false);
-  };
-
-  // تقديم النموذج
-  // تعديل دالة handleSubmit في مكون DeliveryAddressForm
+ 
 
 // تقديم النموذج
 const handleSubmit = async (e: React.FormEvent) => {
@@ -419,6 +346,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                         <StarOff size={16} />
                       )}
                     </button>
+                    
                     
                     {/* زر الحذف */}
                     <button

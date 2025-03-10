@@ -1,5 +1,5 @@
 // src/services/productService.ts
-import api, { API_CONFIG, formatImageUrl, handleApiError } from '../config/apiConfig';
+import api, {  formatImageUrl, handleApiError } from '../config/apiConfig';
 import { 
   Product, 
   CreateProductDto, 

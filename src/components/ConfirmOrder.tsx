@@ -2,7 +2,6 @@ import React from 'react';
 import { CartItem } from '../typerScript/cart';
 import { DeliveryAddress } from '../typerScript/order';
 import { PaymentMethodType } from '../typerScript/order';
-import SaudiRiyal from "../assets/Saudi_Riyal.png";
 
 interface ConfirmOrderProps {
   cartItems: CartItem[];
@@ -26,12 +25,10 @@ interface ConfirmOrderProps {
 const ConfirmOrder: React.FC<ConfirmOrderProps> = ({
   cartItems,
   address,
-  onAddressChange,
   subTotal,
   discountAmount = 0, // قيمة افتراضية صفر
   vatAmount,
   deliveryFee,
-  totalAmount,
   finalAmount,
   paymentMethod,
   paymentDetails,

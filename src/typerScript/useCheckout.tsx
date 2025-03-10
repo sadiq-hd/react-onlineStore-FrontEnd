@@ -60,34 +60,39 @@ export const useCheckout = () => {
    };
 
    const handleSubmit = async () => {
-       if (!validateForm()) return;
+    if (!validateForm()) return;
 
-       try {
-           setLoading(true);
+    try {
+        setLoading(true);
 
-           const orderData: CreateOrderDto = {
-               address,
-               paymentMethod: selectedPaymentMethod!,
-               paymentDetails
-           };
+        // استخراج عناصر السلة
+        const cartItems = cartState.items;
 
-           const response = await orderService.createOrder(orderData);
-           await fetchCart();
+        // إضافة عناصر السلة إلى بيانات الطلب
+        const orderData: CreateOrderDto = {
+            address,
+            paymentMethod: selectedPaymentMethod!,
+            paymentDetails,
+            items: cartItems // إضافة عناصر السلة
+        };
 
-           toast.success('تم إنشاء الطلب بنجاح');
-           navigate(`/orders/${response.id}`);
-       } catch (error: any) {
-           console.error('Error creating order:', error);
-           if (error.response?.status === 401) {
-               toast.error('يرجى تسجيل الدخول أولاً');
-               navigate('/signin');
-           } else {
-               toast.error(error.response?.data?.message || 'حدث خطأ أثناء إنشاء الطلب');
-           }
-       } finally {
-           setLoading(false);
-       }
-   };
+        const response = await orderService.createOrder(orderData);
+        await fetchCart();
+
+        toast.success('تم إنشاء الطلب بنجاح');
+        navigate(`/orders/${response.id}`);
+    } catch (error: any) {
+        console.error('Error creating order:', error);
+        if (error.response?.status === 401) {
+            toast.error('يرجى تسجيل الدخول أولاً');
+            navigate('/signin');
+        } else {
+            toast.error(error.response?.data?.message || 'حدث خطأ أثناء إنشاء الطلب');
+        }
+    } finally {
+        setLoading(false);
+    }
+};
 
    const goToNextStep = () => {
     if (currentStep < 4 && isStepComplete()) {
