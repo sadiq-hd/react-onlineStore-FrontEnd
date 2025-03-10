@@ -1,3 +1,40 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* لإصلاح مشكلة المساحة على اليمين */
+html, body {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+/* ضمان أن جميع العناصر لا تسبب تجاوز عرض الشاشة */
+* {
+  box-sizing: border-box;
+  max-width: 100vw;
+}
+
+/* حل مشكلة الهوامش والحشوات في المحتويات */
+.container {
+  width: 100%;
+  max-width: 100%;
+  margin-right: 0;
+  margin-left: 0;
+  padding-right: 0;
+  padding-left: 0;
+}
+
+/* خاص بالأجهزة الصغيرة */
+@media (max-width: 768px) {
+  .container {
+    padding-right: 0.5rem;
+    padding-left: 0.5rem;
+  }
+  
+  body {
+    padding: 0;
+  }
+}
