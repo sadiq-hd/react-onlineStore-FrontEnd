@@ -1,5 +1,5 @@
 import { AxiosError } from 'axios';
-import api from '../config/axios';
+import api, { handleApiError } from '../config/apiConfig';
 import { 
     CreateOrderDto, 
     OrderResponseDto, 
@@ -9,11 +9,10 @@ import {
     OrderFilter,
     OrderPaginationResponse,
     TopCustomer
-
 } from '../typerScript/order';
 
 class OrderService {
-    private readonly baseUrl = 'https://localhost:5000/api/Orders';
+    private readonly basePath = '/Orders';
 
     async validatePaymentDetails(paymentMethod: PaymentMethodType, paymentDetails?: Record<string, string>): Promise<string | null> {
         if (paymentMethod === PaymentMethodType.CREDIT_CARD || 
@@ -72,13 +71,12 @@ class OrderService {
     
             console.log('Validation passed, sending to API');
             
-            const response = await api.post<OrderResponseDto>(this.baseUrl, orderData);
+            const response = await api.post<OrderResponseDto>(this.basePath, orderData);
             console.log('API response:', response.data);
             return response.data;
         } catch (error) {
             console.error('Error in createOrder:', error);
             
-       
             if (error instanceof AxiosError) {
                 if (error.response?.status === 400) {
                     throw new Error(error.response.data.detail || 'خطأ في البيانات المدخلة');
@@ -101,16 +99,10 @@ class OrderService {
     }
 
     async getTopCustomers(limit: number = 10): Promise<TopCustomer[]> {
-        const token = localStorage.getItem('token');
         try {
             const response = await api.get<TopCustomer[]>(
-                `${this.baseUrl}/top-customers`,
-                {
-                    params: { limit },
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                }
+                `${this.basePath}/top-customers`,
+                { params: { limit } }
             );
             
             return response.data.map(customer => {
@@ -139,13 +131,13 @@ class OrderService {
             });
         } catch (error) {
             console.error("Error fetching top customers:", error);
-            throw error;
+            throw handleApiError(error);
         }
     }
 
     async getOrder(id: number): Promise<OrderResponseDto> {
         try {
-            const response = await api.get<OrderResponseDto>(`${this.baseUrl}/${id}`);
+            const response = await api.get<OrderResponseDto>(`${this.basePath}/${id}`);
             return response.data;
         } catch (error) {
             if (error instanceof AxiosError) {
@@ -159,11 +151,10 @@ class OrderService {
                     throw new Error('ليس لديك صلاحية للوصول إلى هذا الطلب');
                 }
             }
-            throw new Error('حدث خطأ أثناء جلب بيانات الطلب');
+            throw handleApiError(error);
         }
     }
 
-    
     async getUserOrders(page: number = 1, pageSize: number = 10): Promise<{
         orders: OrderResponseDto[];
         totalCount: number;
@@ -174,7 +165,7 @@ class OrderService {
                 orders: OrderResponseDto[];
                 totalCount: number;
                 totalPages: number;
-            }>(this.baseUrl, {
+            }>(this.basePath, {
                 params: {
                     page,
                     pageSize
@@ -187,13 +178,13 @@ class OrderService {
                     throw new Error('الرجاء تسجيل الدخول مرة أخرى');
                 }
             }
-            throw new Error('حدث خطأ أثناء جلب الطلبات');
+            throw handleApiError(error);
         }
     }
 
     async getAdminOrderDetails(id: number): Promise<OrderResponseDto> {
         try {
-            const response = await api.get<{ order: OrderResponseDto, userInfo: any }>(`${this.baseUrl}/admin/orders/${id}`);
+            const response = await api.get<{ order: OrderResponseDto, userInfo: any }>(`${this.basePath}/admin/orders/${id}`);
             return response.data.order; // إرجاع بيانات الطلب فقط
         } catch (error) {
             console.error('Error fetching order details:', error);
@@ -211,16 +202,13 @@ class OrderService {
                 }
             }
     
-            throw new Error('حدث خطأ غير متوقع أثناء جلب بيانات الطلب');
+            throw handleApiError(error);
         }
     }
-    
 
-    
- 
     async getAdminOrders(filter: OrderFilter): Promise<OrderPaginationResponse> {
         try {
-            const response = await api.get<OrderPaginationResponse>(`${this.baseUrl}/admin/orders`, {
+            const response = await api.get<OrderPaginationResponse>(`${this.basePath}/admin/orders`, {
                 params: {
                     page: filter.page,
                     pageSize: filter.pageSize,
@@ -250,15 +238,14 @@ class OrderService {
                     throw new Error('حدث خطأ في النظام');
                 }
             }
-            throw new Error('حدث خطأ أثناء جلب الطلبات');
+            throw handleApiError(error);
         }
     }
 
-    
     async updateOrderStatus(orderId: number, status: OrderStatus): Promise<OrderResponseDto> {
         try {
             const response = await api.put<OrderResponseDto>(
-                `${this.baseUrl}/admin/${orderId}/status`,
+                `${this.basePath}/admin/${orderId}/status`,
                 { status }
             );
             return response.data;
@@ -274,17 +261,14 @@ class OrderService {
                     throw new Error('لم يتم العثور على الطلب');
                 }
             }
-            throw new Error('حدث خطأ أثناء تحديث حالة الطلب');
+            throw handleApiError(error);
         }
     }
-
-
-    
 
     async updatePaymentStatus(orderId: number, status: PaymentStatus): Promise<OrderResponseDto> {
         try {
             const response = await api.put<OrderResponseDto>(
-                `${this.baseUrl}/admin/${orderId}/payment-status`,
+                `${this.basePath}/admin/${orderId}/payment-status`,
                 { status }
             );
             return response.data;
@@ -300,14 +284,14 @@ class OrderService {
                     throw new Error('لم يتم العثور على الطلب');
                 }
             }
-            throw new Error('حدث خطأ أثناء تحديث حالة الدفع');
+            throw handleApiError(error);
         }
     }
 
     async cancelOrder(orderId: number): Promise<OrderResponseDto> {
         try {
             const response = await api.post<OrderResponseDto>(
-                `${this.baseUrl}/${orderId}/cancel`
+                `${this.basePath}/${orderId}/cancel`
             );
             return response.data;
         } catch (error) {
@@ -322,13 +306,13 @@ class OrderService {
                     throw new Error('لم يتم العثور على الطلب');
                 }
             }
-            throw new Error('حدث خطأ أثناء إلغاء الطلب');
+            throw handleApiError(error);
         }
     }
 
     async downloadInvoice(orderId: number): Promise<Blob> {
         try {
-            const response = await api.get(`${this.baseUrl}/${orderId}/invoice`, {
+            const response = await api.get(`${this.basePath}/${orderId}/invoice`, {
                 responseType: 'blob'
             });
             return response.data;
@@ -341,7 +325,7 @@ class OrderService {
                     throw new Error('لم يتم العثور على الفاتورة');
                 }
             }
-            throw new Error('حدث خطأ أثناء تحميل الفاتورة');
+            throw handleApiError(error);
         }
     }
 
@@ -358,8 +342,7 @@ class OrderService {
         try {
             console.log("Fetching orders statistics with filter:", filter);
             
-            // تصحيح المسار ليتطابق مع الباك إند
-            const response = await api.get(`${this.baseUrl}/statistics`, {
+            const response = await api.get(`${this.basePath}/statistics`, {
                 params: filter
             });
             
@@ -373,7 +356,7 @@ class OrderService {
             return response.data;
         } catch (error) {
             console.error("Error in getOrdersStatistics:", error);
-            throw error;
+            throw handleApiError(error);
         }
     }
 

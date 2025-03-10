@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { API_CONFIG, formatImageUrl } from '../config/apiConfig';
 
 interface ProductImage {
     imageUrl: string;
@@ -11,31 +12,10 @@ interface ProductImageCarouselProps {
     productName: string;
 }
 
-// const API_URL = 'https://localhost:5000'; // تغيير الـ port إلى 5000
-const API_URL = 'https://localhost:5000';
-
-
 const ProductImageCarousel: React.FC<ProductImageCarouselProps> = ({ images, productName }) => {
     const [currentIndex, setCurrentIndex] = useState<number>(0);
     const [isAnimating, setIsAnimating] = useState(false);
 
-    // تحويل مسار الصورة مع معالجة أفضل للمسارات
-
-const getImageUrl = (imageUrl: string) => {
-    // إذا كان المسار كاملاً
-    if (imageUrl.startsWith('http')) {
-        return imageUrl;
-    }
-    
-    // إزالة /images/ أو api/images/ من المسار إذا وجد
-    const cleanPath = imageUrl
-        .replace('/images/', '')
-        .replace('images/', '')
-        .replace('/api/images/', '');
-    
-    // بناء المسار الصحيح
-    return `${API_URL}/images/${cleanPath}`;
-};
     const goToPrevious = () => {
         if (isAnimating) return;
         setIsAnimating(true);
@@ -72,12 +52,12 @@ const getImageUrl = (imageUrl: string) => {
                 }`}
             >
                 <img
-                    src={getImageUrl(images[currentIndex].imageUrl)}
+                    src={formatImageUrl(images[currentIndex].imageUrl)}
                     alt={`${productName} - صورة ${currentIndex + 1}`}
                     className="w-full h-full object-cover transform transition-transform duration-300 group-hover:scale-110"
                     onError={(e) => {
                         console.error('فشل تحميل الصورة:', images[currentIndex].imageUrl);
-                        e.currentTarget.src = 'https://via.placeholder.com/400x400.png?text=صورة+غير+متوفرة';
+                        e.currentTarget.src = API_CONFIG.FALLBACK_IMAGE;
                     }}
                 />
             </div>

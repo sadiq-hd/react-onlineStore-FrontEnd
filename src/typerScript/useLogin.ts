@@ -1,6 +1,7 @@
 // src/hooks/useLogin.ts
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api, { handleApiError } from '../config/apiConfig';
 
 interface LoginFormData {
   emailOrPhone: string;  // حقل واحد للإيميل أو الهاتف
@@ -11,9 +12,6 @@ interface OtpFormData {
   otp: string;
   phoneNumber: string;
 }
-
-const API_BASE_URL = 'https://localhost:5000/api';
-// const API_BASE_URL = 'https://reactbackend20241214202555.azurewebsites.net';
 
 export const useLogin = () => {
   const navigate = useNavigate();
@@ -53,30 +51,16 @@ export const useLogin = () => {
     setError('');
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/resend-otp`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-          phoneNumber: otpFormData.phoneNumber
-        }),
+      const response = await api.post('/auth/resend-otp', {
+        phoneNumber: otpFormData.phoneNumber
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || 'حدث خطأ أثناء إعادة إرسال رمز التحقق');
-      }
-
-      const data = await response.json();
-      
-      if (data.testOtp) {
-        setTestOtp(data.testOtp);
+      if (response.data.testOtp) {
+        setTestOtp(response.data.testOtp);
       }
       
       // عرض رسالة نجاح
-      alert(data.message || 'تم إرسال رمز التحقق بنجاح');
+      alert(response.data.message || 'تم إرسال رمز التحقق بنجاح');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'حدث خطأ أثناء إعادة إرسال رمز التحقق');
     } finally {
@@ -90,49 +74,31 @@ export const useLogin = () => {
     setError('');
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-          emailOrPhone: formData.emailOrPhone.trim(),
-          password: formData.password
-        }),
+      const response = await api.post('/auth/login', {
+        emailOrPhone: formData.emailOrPhone.trim(),
+        password: formData.password
       });
 
-      if (!response.ok) {
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.includes("application/problem+json")) {
-          const errorData = await response.json();
-          throw new Error(errorData.errors?.emailOrPhone?.[0] || errorData.title || 'حدث خطأ في تسجيل الدخول');
-        } else {
-          const errorText = await response.text();
-          throw new Error(errorText || 'حدث خطأ أثناء تسجيل الدخول');
-        }
-      }
-
-      const data = await response.json();
-      
       // التحقق مما إذا كان هناك حاجة للتحقق ثنائي العامل OTP
-      if (data.requireOtp) {
+      if (response.data.requireOtp) {
         setRequireOtp(true);
         setOtpFormData(prev => ({
           ...prev,
-          phoneNumber: data.phoneNumber || ''
+          phoneNumber: response.data.phoneNumber || ''
         }));
         
-        // حفظ OTP للاختبار في بيئة التطوير فقط
-        if (data.testOtp) {
-          setTestOtp(data.testOtp);
+        // عرض الرمز سواء كان testOtp أو otp
+        const otpCode = response.data.testOtp || response.data.otp;
+        if (otpCode) {
+          setTestOtp(otpCode);
         }
+      
       } else {
         // حفظ بيانات تسجيل الدخول والتوجيه
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('currentUser', JSON.stringify(data.user));
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('currentUser', JSON.stringify(response.data.user));
 
-        if (data.user.role === 'admin') {
+        if (response.data.user.role === 'admin') {
           navigate('/admin/AdminDashboard');
         } else {
           navigate('/');
@@ -140,7 +106,8 @@ export const useLogin = () => {
       }
     } catch (err) {
       console.error("Login Error:", err);
-      setError(err instanceof Error ? err.message : 'حدث خطأ أثناء تسجيل الدخول');
+      const errorMessage = handleApiError(err).message;
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -152,34 +119,22 @@ export const useLogin = () => {
     setError('');
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/verify-otp`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-          phoneNumber: otpFormData.phoneNumber,
-          otp: otpFormData.otp
-        }),
+      const response = await api.post('/auth/verify-otp', {
+        phoneNumber: otpFormData.phoneNumber,
+        otp: otpFormData.otp
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || 'رمز التحقق غير صحيح');
-      }
+      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('currentUser', JSON.stringify(response.data.user));
 
-      const data = await response.json();
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('currentUser', JSON.stringify(data.user));
-
-      if (data.user.role === 'admin') {
+      if (response.data.user.role === 'admin') {
         navigate('/admin/AdminDashboard');
       } else {
         navigate('/');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'حدث خطأ أثناء التحقق من الرمز');
+      const errorMessage = handleApiError(err).message;
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }

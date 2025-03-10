@@ -1,11 +1,11 @@
-// تعديلات في discountService.ts
-
-import api from '../config/axios';
+// src/services/discountService.ts
+import api, { handleApiError } from '../config/apiConfig';
 import { DiscountType, DiscountScope, Discount, CreateDiscountDto } from '../types/discount';
 import { Product } from '../types/product';
 
 class DiscountService {
-  private readonly baseUrl = 'https://localhost:5000/api/Discounts';
+  // استخدام المسار النسبي بدلاً من العنوان الكامل
+  private readonly basePath = '/Discounts';
 
   async getDiscountForCartItem(productId: number, categoryName: string): Promise<{
     hasDiscount: boolean;
@@ -16,15 +16,12 @@ class DiscountService {
     originalPrice?: number;
   }> {
     try {
-      const token = localStorage.getItem('token');
+      // استخدام api بدلاً من الوصول المباشر مع رأس المصادقة
       const response = await api.get<{
         discount: Discount;
         product: Product;
-      }>(`${this.baseUrl}/cart-discount`, {
-        params: { productId, categoryName },
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      }>(`${this.basePath}/cart-discount`, {
+        params: { productId, categoryName }
       });
 
       if (response.data) {
@@ -68,7 +65,7 @@ class DiscountService {
     }
   }
 
-  // دالة مساعدة لحساب السعر بعد الخصم
+  // دالة مساعدة لحساب السعر بعد الخصم (لم تتغير)
   private calculateDiscountedPrice(
     originalPrice: number, 
     discountValue: number, 
@@ -86,38 +83,26 @@ class DiscountService {
 
   async getAllDiscounts(): Promise<Discount[]> {
     try {
-      const token = localStorage.getItem('token');
-      const response = await api.get<Discount[]>(this.baseUrl, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await api.get<Discount[]>(this.basePath);
       return response.data;
     } catch (error) {
       console.error('Error fetching discounts:', error);
-      throw error;
+      throw handleApiError(error);
     }
   }
 
   async getDiscount(id: number): Promise<Discount> {
     try {
-      const token = localStorage.getItem('token');
-      const response = await api.get<Discount>(`${this.baseUrl}/${id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await api.get<Discount>(`${this.basePath}/${id}`);
       return response.data;
     } catch (error) {
       console.error(`Error fetching discount ${id}:`, error);
-      throw error;
+      throw handleApiError(error);
     }
   }
 
   async createDiscount(discount: CreateDiscountDto): Promise<Discount> {
     try {
-      const token = localStorage.getItem('token');
-      
       // تصحيح بيانات الخصم قبل الإرسال
       const fixedDiscount = {
         ...discount,
@@ -132,22 +117,16 @@ class DiscountService {
       
       console.log("Sending discount data:", JSON.stringify(fixedDiscount, null, 2));
       
-      const response = await api.post<Discount>(this.baseUrl, fixedDiscount, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await api.post<Discount>(this.basePath, fixedDiscount);
       return response.data;
     } catch (error) {
       console.error('Error creating discount:', error);
-      throw error;
+      throw handleApiError(error);
     }
   }
 
   async updateDiscount(id: number, discount: CreateDiscountDto): Promise<Discount> {
     try {
-      const token = localStorage.getItem('token');
-      
       // تصحيح بيانات الخصم قبل الإرسال
       const fixedDiscount = {
         ...discount,
@@ -165,13 +144,11 @@ class DiscountService {
       console.log("Updating discount data:", JSON.stringify(fixedDiscount, null, 2));
       
       // إضافة مهلة أطول للطلب في حالة الشبكات البطيئة
-      const response = await api.put<Discount>(`${this.baseUrl}/${id}`, fixedDiscount, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        timeout: 10000 // 10 ثوان مهلة للطلب
-      });
+      const response = await api.put<Discount>(
+        `${this.basePath}/${id}`, 
+        fixedDiscount, 
+        { timeout: 10000 } // 10 ثوان مهلة للطلب
+      );
       
       console.log("Server response:", response.data);
       return response.data;
@@ -189,41 +166,32 @@ class DiscountService {
         console.error("Error message:", error.message);
       }
       
-      throw error;
+      throw handleApiError(error);
     }
   }
 
   async deleteDiscount(id: number): Promise<void> {
     try {
-      const token = localStorage.getItem('token');
       console.log(`Deleting discount with ID: ${id}`);
       
-      await api.delete(`${this.baseUrl}/${id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      await api.delete(`${this.basePath}/${id}`);
       
       console.log(`Successfully deleted discount with ID: ${id}`);
     } catch (error) {
       console.error(`Error deleting discount ${id}:`, error);
-      throw error;
+      throw handleApiError(error);
     }
   }
 
   async getApplicableDiscounts(productId: number, categoryName: string): Promise<Discount[]> {
     try {
-      const token = localStorage.getItem('token');
-      const response = await api.get<Discount[]>(`${this.baseUrl}/applicable`, {
-        params: { productId, categoryName },
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      const response = await api.get<Discount[]>(`${this.basePath}/applicable`, {
+        params: { productId, categoryName }
       });
       return response.data;
     } catch (error) {
       console.error('Error fetching applicable discounts:', error);
-      throw error;
+      throw handleApiError(error);
     }
   }
 }

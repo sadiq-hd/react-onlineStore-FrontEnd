@@ -1,11 +1,4 @@
-import axios from 'axios';
-import { handleAxiosError } from '../components/handleAxiosError';
-
-// const API_URL = 'https://localhost:5000/api';
-const IMAGE_URL = 'https://localhost:5000';
-const FALLBACK_IMAGE = 'https://via.placeholder.com/200x200?text=صورة+غير+متوفرة';
-const API_URL = 'https://localhost:5000/api';
-
+import api, { API_CONFIG, formatImageUrl, handleApiError } from '../config/apiConfig';
 
 export interface FavoriteItem {
     id: number;
@@ -27,41 +20,26 @@ export interface Product {
     images: { imageUrl: string }[];
 }
 
-const formatImageUrl = (product: Product): string => {
+// دالة مساعدة لتنسيق عنوان الصورة من المنتج
+const formatProductImageUrl = (product: Product): string => {
     // إذا لم يكن هناك صور أصلاً، نرجع الصورة البديلة مباشرة
     if (!product.images || product.images.length === 0) {
-        return FALLBACK_IMAGE;
+        return API_CONFIG.FALLBACK_IMAGE;
     }
 
     const imageUrl = product.images[0].imageUrl;
     if (!imageUrl) {
-        return FALLBACK_IMAGE;
+        return API_CONFIG.FALLBACK_IMAGE;
     }
 
-    // تنظيف وتنسيق مسار الصورة
-    if (imageUrl.startsWith('http')) {
-        return imageUrl;
-    }
-
-    const cleanPath = imageUrl
-        .replace(/^\/+/, '')
-        .replace(/^images\//, '')
-        .replace(/^api\/images\//, '');
-
-    return `${IMAGE_URL}/images/${cleanPath}`;
+    // استخدام الدالة المركزية لتنسيق عنوان الصورة
+    return formatImageUrl(imageUrl);
 };
 
 export const wishlistService = {
     async getWishlist(): Promise<FavoriteItem[]> {
         try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                throw new Error('لم يتم العثور على رمز المصادقة');
-            }
-
-            const response = await axios.get<Product[]>(`${API_URL}/Wishlist`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const response = await api.get<Product[]>('/Wishlist');
 
             return response.data.map(product => ({
                 id: product.id,
@@ -70,63 +48,42 @@ export const wishlistService = {
                 description: product.description,
                 category: product.category,
                 stock: product.stock,
-                imageUrl: formatImageUrl(product)
+                imageUrl: formatProductImageUrl(product)
             }));
         } catch (error) {
             console.error('Error fetching wishlist:', error);
-            throw handleAxiosError(error);
+            throw handleApiError(error);
         }
     },
 
     async addToWishlist(productId: number): Promise<void> {
         try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                throw new Error('لم يتم العثور على رمز المصادقة');
-            }
-
-            await axios.post(`${API_URL}/Wishlist/${productId}`, null, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.post(`/Wishlist/${productId}`);
         } catch (error) {
             console.error('Error adding to wishlist:', error);
-            throw handleAxiosError(error);
+            throw handleApiError(error);
         }
     },
 
     async removeFromWishlist(productId: number): Promise<void> {
         try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                throw new Error('لم يتم العثور على رمز المصادقة');
-            }
-
-            await axios.delete(`${API_URL}/Wishlist/${productId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.delete(`/Wishlist/${productId}`);
         } catch (error) {
             console.error('Error removing from wishlist:', error);
-            throw handleAxiosError(error);
+            throw handleApiError(error);
         }
     },
 
     async clearWishlist(): Promise<void> {
         try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                throw new Error('لم يتم العثور على رمز المصادقة');
-            }
-
-            await axios.delete(`${API_URL}/Wishlist/clear`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.delete('/Wishlist/clear');
         } catch (error) {
             console.error('Error clearing wishlist:', error);
-            throw handleAxiosError(error);
+            throw handleApiError(error);
         }
     },
 
-    // Helper method for checking if an item is in the wishlist
+    // دالة مساعدة للتحقق مما إذا كان العنصر موجودًا في قائمة الرغبات
     async isInWishlist(productId: number): Promise<boolean> {
         try {
             const items = await this.getWishlist();

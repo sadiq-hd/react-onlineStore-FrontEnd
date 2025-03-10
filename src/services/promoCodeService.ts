@@ -1,4 +1,4 @@
-import api from '../config/axios';
+import api from '../config/apiConfig';
 import { PromoCode, PromoCodeValidationResult } from '../types/promoCode';
 
 class PromoCodeService {

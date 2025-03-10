@@ -1,15 +1,13 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import api from '../config/axios';
+import api, { handleApiError } from '../config/apiConfig';
 import { 
   CartItem, 
   CartContextType, 
   CartState, 
   DiscountType,
-  calculateTotal  // استيراد الدالة من ملف التعريفات
+  calculateTotal
 } from '../typerScript/cart';
 import { productService } from '../services/productService';
-
-// حذف تعريف الدالة calculateTotal هنا لأننا قمنا باستيرادها من ملف التعريفات
 
 export const CartContext = createContext<CartContextType | undefined>(undefined);
 
@@ -81,11 +79,15 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const fetchCart = async () => {
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
-      const response = await api.get('/api/Cart');
+      // تعديل مسار API بإزالة /api الزائدة
+      const response = await api.get('/Cart');
       
       // التأكد من أن البيانات المستلمة تحتوي على مصفوفة items
       if (response.data && response.data.items && Array.isArray(response.data.items)) {
         dispatch({ type: 'SET_CART', payload: response.data.items });
+      } else if (Array.isArray(response.data)) {
+        // بعض الخوادم قد ترجع المصفوفة مباشرة
+        dispatch({ type: 'SET_CART', payload: response.data });
       } else {
         // إذا كانت البيانات المستلمة ليست بالتنسيق المتوقع
         dispatch({ type: 'SET_CART', payload: [] });
@@ -109,7 +111,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           ? product.discountType
           : undefined;
 
-      await api.post('/api/Cart/add', { 
+      // تعديل مسار API بإزالة /api الزائدة
+      await api.post('/Cart/add', { 
         productId, 
         quantity
       });
@@ -141,7 +144,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const removeFromCart = async (productId: number, quantity: number = 1) => {
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
-      await api.delete(`/api/Cart/remove/${productId}/${quantity}`);
+      // تعديل مسار API بإزالة /api الزائدة
+      await api.delete(`/Cart/remove/${productId}/${quantity}`);
       // تحديث مؤقت للسلة محلياً
       const currentItem = state.items.find(item => item.productId === productId);
       if (currentItem) {
@@ -173,14 +177,16 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await removeFromCart(productId, 1);
       } else {
         try {
-          await api.put(`/api/Cart/update/${productId}`, { quantity });
+          // تعديل مسار API بإزالة /api الزائدة
+          await api.put(`/Cart/update/${productId}`, { quantity });
           dispatch({
             type: 'UPDATE_CART_ITEM',
             payload: { productId, quantity }
           });
         } catch {
-          await api.delete(`/api/Cart/remove/${productId}/999999`);
-          await api.post('/api/Cart/add', { productId, quantity });
+          // تعديل مسار API بإزالة /api الزائدة
+          await api.delete(`/Cart/remove/${productId}/999999`);
+          await api.post('/Cart/add', { productId, quantity });
         }
       }
       await fetchCart();
@@ -195,7 +201,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const token = localStorage.getItem('token');
       if (token) {
-        await api.post('/api/Cart/clear');
+        // تعديل مسار API بإزالة /api الزائدة
+        await api.post('/Cart/clear');
       }
       dispatch({ type: 'RESET_CART' });
     } catch (error: any) {

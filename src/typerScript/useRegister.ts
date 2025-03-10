@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api, { handleApiError } from '../config/apiConfig';
 
 interface RegisterFormData {
   name: string;
@@ -21,9 +22,6 @@ interface OtpFormData {
   otp: string;
   phoneNumber: string;
 }
-
-const API_BASE_URL = 'https://localhost:5000/api';
-// const API_BASE_URL = 'https://reactbackend20241214202555.azurewebsites.net';
 
 export const useRegister = () => {
   const navigate = useNavigate();
@@ -79,32 +77,19 @@ export const useRegister = () => {
     setServerError('');
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/resend-otp`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-          phoneNumber: otpFormData.phoneNumber
-        }),
+      const response = await api.post('/auth/resend-otp', {
+        phoneNumber: otpFormData.phoneNumber
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || 'حدث خطأ أثناء إعادة إرسال رمز التحقق');
-      }
-
-      const data = await response.json();
-      
-      if (data.testOtp) {
-        setTestOtp(data.testOtp);
+      if (response.data.testOtp) {
+        setTestOtp(response.data.testOtp);
       }
       
       // عرض رسالة نجاح
-      alert(data.message || 'تم إرسال رمز التحقق بنجاح');
+      alert(response.data.message || 'تم إرسال رمز التحقق بنجاح');
     } catch (err) {
-      setServerError(err instanceof Error ? err.message : 'حدث خطأ أثناء إعادة إرسال رمز التحقق');
+      const errorMessage = handleApiError(err).message;
+      setServerError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -156,46 +141,32 @@ export const useRegister = () => {
       setServerError('');
 
       try {
-        const response = await fetch(`${API_BASE_URL}/auth/register`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          credentials: 'include',
-          body: JSON.stringify({
-            username: formData.email, // تعديل: استخدام البريد الإلكتروني كاسم المستخدم
-            name: formData.name,
-            email: formData.email,
-            password: formData.password,
-            phoneNumber: formData.phoneNumber,
-          }),
+        const response = await api.post('/auth/register', {
+          username: formData.email, // تعديل: استخدام البريد الإلكتروني كاسم المستخدم
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+          phoneNumber: formData.phoneNumber,
         });
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(errorText || 'حدث خطأ أثناء إنشاء الحساب');
-        }
-
-        const data = await response.json();
-        
         // التحقق مما إذا كان هناك حاجة للتحقق من رقم الهاتف
-        if (data.requirePhoneVerification) {
+        if (response.data.requirePhoneVerification) {
           setRequirePhoneVerification(true);
           setOtpFormData(prev => ({
             ...prev,
-            phoneNumber: data.phoneNumber || ''
+            phoneNumber: response.data.phoneNumber || ''
           }));
           
           // حفظ OTP للاختبار في بيئة التطوير
-          if (data.testOtp) {
-            setTestOtp(data.testOtp);
+          if (response.data.testOtp) {
+            setTestOtp(response.data.testOtp);
           }
         } else {
           navigate('/signin');
         }
       } catch (err) {
-        setServerError(err instanceof Error ? err.message : 'حدث خطأ أثناء إنشاء الحساب');
+        const errorMessage = handleApiError(err).message;
+        setServerError(errorMessage);
       } finally {
         setIsLoading(false);
       }
@@ -208,35 +179,23 @@ export const useRegister = () => {
     setServerError('');
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/verify-phone`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-          phoneNumber: otpFormData.phoneNumber,
-          otp: otpFormData.otp
-        }),
+      const response = await api.post('/auth/verify-phone', {
+        phoneNumber: otpFormData.phoneNumber,
+        otp: otpFormData.otp
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || 'رمز التحقق غير صحيح');
-      }
-
-      const data = await response.json();
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('currentUser', JSON.stringify(data.user));
+      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('currentUser', JSON.stringify(response.data.user));
 
       // التوجيه بناءً على دور المستخدم
-      if (data.user.role === 'admin') {
+      if (response.data.user.role === 'admin') {
         navigate('/admin/AdminDashboard');
       } else {
         navigate('/');
       }
     } catch (err) {
-      setServerError(err instanceof Error ? err.message : 'حدث خطأ أثناء التحقق من الرمز');
+      const errorMessage = handleApiError(err).message;
+      setServerError(errorMessage);
     } finally {
       setIsLoading(false);
     }

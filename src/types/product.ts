@@ -77,6 +77,8 @@ export interface DashboardStats {
   }[];
 }
 
+
+
 // نوع لإنشاء منتج جديد (بدون id و images)
 export type CreateProductDto = Omit<Product, 'id' | 'images'>;
 

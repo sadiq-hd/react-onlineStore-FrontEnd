@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CreateProductDto, PRODUCT_CATEGORIES, Product } from '../types/product';
 import { X } from 'lucide-react';
-import api from '../config/axios';
+import api, { API_CONFIG, formatImageUrl } from '../config/apiConfig';
 
 interface ProductFormProps {
     initialData?: Product;
@@ -9,25 +9,7 @@ interface ProductFormProps {
     isLoading: boolean;
 }
 
-// const API_URL = 'https://localhost:5000';
-const API_URL = 'https://localhost:5000';
-
-
-const getImageUrl = (imageUrl: string) => {
-    if (imageUrl.startsWith('http')) {
-        return imageUrl;
-    }
-
-    // تنظيف المسار من أي بادئات متكررة
-    const cleanPath = imageUrl
-        .replace(/^\/+/, '')  // إزالة الشرطات المائلة من البداية
-        .replace(/^images\//, '')  // إزالة 'images/' من البداية
-        .replace(/^api\/images\//, ''); // إزالة 'api/images/' من البداية
-
-    return `${API_URL}/images/${cleanPath}`;
-};
-
-export const ProductForm: React.FC<ProductFormProps> = ({
+const ProductForm: React.FC<ProductFormProps> = ({
     initialData,
     onSubmit,
     isLoading
@@ -37,7 +19,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         description: '',
         price: 0,
         stock: 0,
-        category: PRODUCT_CATEGORIES[0]
+        category: PRODUCT_CATEGORIES[0],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
     });
 
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -51,7 +35,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 description: initialData.description,
                 price: initialData.price,
                 stock: initialData.stock,
-                category: initialData.category
+                category: initialData.category,
+                createdAt: initialData.createdAt || new Date().toISOString(),
+                updatedAt: new Date().toISOString()
             });
             if (initialData.images) {
                 console.log('Setting existing images:', initialData.images);
@@ -84,7 +70,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
     const handleRemoveExistingImage = async (imageId: number) => {
         try {
-            await api.delete(`/api/products/images/${imageId}`);
+            await api.delete(`/products/images/${imageId}`);
             setExistingImages(prev => prev.filter(img => img.id !== imageId));
         } catch (error) {
             console.error('Error deleting image:', error);
@@ -101,7 +87,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 description: '',
                 price: 0,
                 stock: 0,
-                category: PRODUCT_CATEGORIES[0]
+                category: PRODUCT_CATEGORIES[0],
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
             });
             setSelectedFiles([]);
             setPreviewUrls([]);
@@ -185,12 +173,12 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                         {existingImages.map((image) => (
                             <div key={image.id} className="relative group">
                                 <img
-                                    src={getImageUrl(image.imageUrl)}
+                                    src={formatImageUrl(image.imageUrl)}
                                     alt="صورة المنتج"
                                     className="w-full h-32 object-cover rounded-lg"
                                     onError={(e) => {
                                         console.error('Error loading image:', image.imageUrl);
-                                        e.currentTarget.src = 'https://via.placeholder.com/200x200?text=صورة+غير+متوفرة';
+                                        e.currentTarget.src = API_CONFIG.FALLBACK_IMAGE;
                                     }}
                                 />
                                 <button
@@ -263,3 +251,5 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         </form>
     );
 };
+
+export { ProductForm };
