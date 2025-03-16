@@ -94,6 +94,7 @@ export interface OrderResponseDto {
     promoCode?: string; // كود الخصم المستخدم
     promoCodeId?: number; // معرف كود الخصم المستخدم
     hasDiscount?: boolean; // مؤشر عما إذا كان الطلب يحتوي على خصم
+    
 }
 
 export interface OrderItemDto {

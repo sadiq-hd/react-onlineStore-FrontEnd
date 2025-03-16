@@ -1,3 +1,4 @@
+// src/pages/Checkout.tsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
@@ -64,6 +65,7 @@ const Checkout: React.FC = () => {
         }, 0);
         
         // استخراج قيمة الضريبة (15%) من السعر بعد الخصم (ضريبة متضمنة في السعر)
+        // استخدام الصيغة: مبلغ الضريبة = المبلغ الإجمالي × معدل الضريبة ÷ (1 + معدل الضريبة)
         const vatAmount = Number(((subTotalAfterDiscount * 0.15) / 1.15).toFixed(2));
         
         // رسوم الشحن الثابتة
@@ -104,14 +106,14 @@ const Checkout: React.FC = () => {
                 fullName: address.fullName,
                 phoneNumber: address.phoneNumber,
                 city: address.city,
-                street: address.street,
+                street: address.street || '',
                 buildingNumber: address.buildingNumber || '',
                 additionalDetails: address.additionalDetails || ''
             },
+            // إضافة عناصر السلة كمنتجات للطلب
             items: cartState.items.map(item => ({
                 productId: item.productId,
                 quantity: item.quantity
-                // لا ترسل معلومات الخصم هنا - الخادم سيتعامل معها
             })),
             paymentMethod: paymentMethod,
             paymentDetails: paymentMethod === PaymentMethodType.CASH_ON_DELIVERY 
@@ -122,6 +124,7 @@ const Checkout: React.FC = () => {
         try {
             console.log('Sending order data:', JSON.stringify(orderData, null, 2));
             const order = await orderService.createOrder(orderData);
+            console.log('Received order response:', JSON.stringify(order, null, 2));
             await clearCart();
             toast.success('تم إنشاء الطلب بنجاح');
             navigate(`/orders/${order.id}`);
@@ -146,6 +149,7 @@ const Checkout: React.FC = () => {
                 return (
                     <OrderSummary
                         cartItems={cartState.items}
+                        originalSubTotal={originalSubTotal}
                         subTotal={subTotalAfterDiscount}
                         discountAmount={discountAmount}
                         vatAmount={vatAmount}
@@ -175,7 +179,7 @@ const Checkout: React.FC = () => {
                             setPaymentDetails(prev => ({ ...prev, [field]: value }))}
                         onBack={() => setStep(2)}
                         onNext={() => setStep(4)}
-                        isComplete={!!paymentMethod && Object.keys(paymentDetails).length > 0}
+                        isComplete={!!paymentMethod}
                     />
                 );
             case 4:
@@ -184,11 +188,11 @@ const Checkout: React.FC = () => {
                         cartItems={cartState.items}
                         address={address}
                         onAddressChange={handleAddressChange}
+                        originalSubTotal={originalSubTotal}
                         subTotal={subTotalAfterDiscount}
                         discountAmount={discountAmount}
                         vatAmount={vatAmount}
                         deliveryFee={deliveryFee}
-                        totalAmount={subTotalAfterDiscount}
                         finalAmount={finalAmount}
                         paymentMethod={paymentMethod}
                         paymentDetails={paymentDetails}

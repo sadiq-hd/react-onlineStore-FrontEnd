@@ -8,9 +8,8 @@ import {
   Share2, 
   ShoppingCart, 
   Truck, 
-  ArrowLeft, 
-  ArrowRight,
-  Check
+  Check,
+  X
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useCart } from '../context/CartContext';
@@ -24,6 +23,7 @@ const ProductDetailsPage: React.FC = () => {
   const [selectedImage, setSelectedImage] = useState<number>(0);
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
   const [isAddingToCart, setIsAddingToCart] = useState<boolean>(false);
+  const [zoomedImage, setZoomedImage] = useState<boolean>(false);
   const cartContext = useCart();
 
   useEffect(() => {
@@ -91,7 +91,6 @@ const ProductDetailsPage: React.FC = () => {
         position: "bottom-right",
         autoClose: 3000,
       });
-
       
     } catch (error) {
       console.error('Error adding to cart:', error);
@@ -111,6 +110,10 @@ const ProductDetailsPage: React.FC = () => {
 
   const handleImageChange = (index: number) => {
     setSelectedImage(index);
+  };
+
+  const toggleZoom = () => {
+    setZoomedImage(!zoomedImage);
   };
 
   const handleQuantityChange = (type: 'increase' | 'decrease') => {
@@ -147,35 +150,52 @@ const ProductDetailsPage: React.FC = () => {
   return (
     <div className="container mx-auto px-4 py-8 rtl">
       <div className="grid md:grid-cols-2 gap-8">
-        {/* معرض الصور */}
+        {/* معرض الصور - تم تعديله ليكون بحجم ثابت */}
         <div>
-          <div className="relative mb-4">
-            <img 
-              src={product.images[selectedImage]?.imageUrl} 
-              alt={product.name} 
-              className="w-full h-[400px] object-cover rounded-xl shadow-md"
-            />
+          {/* صندوق الصورة الرئيسية بحجم ثابت */}
+          <div className="relative mb-4 bg-gray-50 rounded-xl shadow-md overflow-hidden w-full md:w-[60%] mx-auto aspect-square">
+          <div className="absolute inset-0 flex items-center justify-center">
+              <img 
+                src={product.images[selectedImage]?.imageUrl} 
+                alt={product.name} 
+                className="max-w-full max-h-full object-contain cursor-zoom-in"
+                onClick={toggleZoom}
+              />
+            </div>
             <button 
               onClick={() => setIsFavorite(!isFavorite)}
-              className="absolute top-4 right-4 bg-white/70 p-2 rounded-full hover:bg-white transition-all"
+              className="absolute top-4 right-4 bg-white/70 p-2 rounded-full hover:bg-white transition-all z-10"
             >
               <Heart 
                 className={`w-6 h-6 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-700'}`} 
               />
             </button>
+            {/* أيقونة تكبير */}
+            <div className="absolute bottom-4 left-4 bg-white/70 px-2 py-1 rounded-full text-xs text-gray-700 flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              انقر للتكبير
+            </div>
           </div>
 
           {/* صور مصغرة */}
-          <div className="flex space-x-2 rtl:space-x-reverse">
+          <div className="flex space-x-2 rtl:space-x-reverse overflow-x-auto py-2">
             {product.images.map((img, index) => (
-              <img 
+              <div 
                 key={index}
-                src={img.imageUrl} 
-                alt={`${product.name} - صورة ${index + 1}`}
                 onClick={() => handleImageChange(index)}
-                className={`w-16 h-16 object-cover rounded-lg cursor-pointer 
-                  ${selectedImage === index ? 'border-2 border-blue-500' : 'opacity-70'}`}
-              />
+                className={`min-w-[64px] w-16 h-16 rounded-lg cursor-pointer overflow-hidden border-2
+                  ${selectedImage === index ? 'border-blue-500' : 'border-transparent opacity-70'}`}
+              >
+                <div className="w-full h-full flex items-center justify-center bg-gray-50">
+                  <img 
+                    src={img.imageUrl} 
+                    alt={`${product.name} - صورة ${index + 1}`}
+                    className="max-w-full max-h-full object-contain"
+                  />
+                </div>
+              </div>
             ))}
           </div>
         </div>
@@ -237,8 +257,9 @@ const ProductDetailsPage: React.FC = () => {
               <button 
                 onClick={() => handleQuantityChange('decrease')}
                 className="p-2 hover:bg-gray-100"
+                disabled={quantity <= 1}
               >
-                <ArrowLeft className="w-5 h-5" />
+                <span className="w-5 h-5 flex items-center justify-center font-bold">-</span>
               </button>
               <span className="px-4">{quantity}</span>
               <button 
@@ -246,7 +267,7 @@ const ProductDetailsPage: React.FC = () => {
                 className="p-2 hover:bg-gray-100"
                 disabled={quantity >= product.stock}
               >
-                <ArrowRight className="w-5 h-5" />
+                <span className="w-5 h-5 flex items-center justify-center font-bold">+</span>
               </button>
             </div>
           </div>
@@ -316,6 +337,45 @@ const ProductDetailsPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* وضع تكبير الصورة - يظهر عند الضغط على الصورة */}
+      {zoomedImage && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="relative max-w-4xl w-full max-h-full">
+            <button 
+              onClick={toggleZoom}
+              className="absolute top-0 right-0 bg-white/20 p-2 rounded-full text-white z-10 -m-4"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <img 
+              src={product.images[selectedImage]?.imageUrl}
+              alt={product.name}
+              className="max-w-full max-h-[90vh] object-contain mx-auto"
+            />
+            
+            {/* شريط الصور المصغرة في وضع التكبير */}
+            <div className="flex justify-center mt-4 gap-2 overflow-x-auto">
+              {product.images.map((img, index) => (
+                <div 
+                  key={index}
+                  onClick={() => handleImageChange(index)}
+                  className={`w-16 h-16 rounded cursor-pointer overflow-hidden border-2
+                    ${selectedImage === index ? 'border-white' : 'border-transparent opacity-50'}`}
+                >
+                  <div className="w-full h-full flex items-center justify-center bg-gray-800">
+                    <img 
+                      src={img.imageUrl} 
+                      alt={`${product.name} - صورة ${index + 1}`}
+                      className="max-w-full max-h-full object-contain"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
