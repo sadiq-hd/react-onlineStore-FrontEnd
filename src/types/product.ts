@@ -38,6 +38,7 @@ export interface Product {
   discountType?: string;
 }
 
+
 export interface ProductWithDiscountDto {
   id: number;
   name: string;

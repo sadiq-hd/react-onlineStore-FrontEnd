@@ -185,46 +185,47 @@ export const productService = {
     }
   },
 
-  getProductsWithDiscounts: async (): Promise<Product[]> => {
-    try {
-      const response = await api.get<ProductWithDiscountDto[]>('/products/with-discounts');
-      console.log('Products with discounts response:', response.data);
-      
-      return response.data.map((product) => ({
-        id: product.id,
-        name: product.name,
-        description: product.description,
-        price: product.price,
-        stock: product.stock,
-        category: product.category as ProductCategory,
-        images: Array.isArray(product.images) ? product.images.map((img: string | ProductImage) => {
-          if (typeof img === 'string') {
-            return {
-              id: 0,
-              productId: product.id,
-              imageUrl: formatImageUrl(img)
-            };
-          } else {
-            return {
-              id: img.id || 0,
-              productId: product.id,
-              imageUrl: formatImageUrl(img.imageUrl)
-            };
-          }
-        }) : [],
-        hasDiscount: product.hasDiscount,
-        discountedPrice: product.discountedPrice,
-        discountName: product.discountName,
-        discountValue: product.discountValue,
-        discountType: product.discountType,
-        createdAt: '',  // قيمة افتراضية
-        updatedAt: '',  // قيمة افتراضية
-      }));
-    } catch (error) {
-      console.error('Error fetching products with discounts:', error);
-      throw handleApiError(error);
-    }
-  },
+ getProductsWithDiscounts: async (): Promise<Product[]> => {
+  try {
+    const response = await api.get<ProductWithDiscountDto[]>('/products/with-discounts');
+    console.log('Products with discounts response:', response.data);
+    
+    return response.data.map((product) => ({
+      id: product.id,
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      stock: product.stock,
+      category: product.category as ProductCategory,
+      images: Array.isArray(product.images) ? product.images.map((img: string | ProductImage) => {
+        if (typeof img === 'string') {
+          return {
+            id: 0,
+            productId: product.id,
+            imageUrl: formatImageUrl(img)
+          };
+        } else {
+          return {
+            id: img.id || 0,
+            productId: product.id,
+            imageUrl: formatImageUrl(img.imageUrl)
+          };
+        }
+      }) : [],
+      hasDiscount: product.hasDiscount,
+      discountedPrice: product.discountedPrice,
+      discountName: product.discountName,
+      discountValue: product.discountValue,
+      discountType: product.discountType,
+      // إضافة القيم المفقودة كسلاسل فارغة
+      createdAt: '',  
+      updatedAt: ''
+    }));
+  } catch (error) {
+    console.error('Error fetching products with discounts:', error);
+    throw handleApiError(error);
+  }
+},
   
   // جلب منتج بواسطة المعرف
   getProductById: async (id: number): Promise<Product> => {

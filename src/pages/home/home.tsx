@@ -1,15 +1,36 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+// src/pages/home/home.tsx
+import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { productService } from '../../services/productService';
 import { useProductManagement } from '../../typerScript/useProductManagement';
-import ProductImageCarousel from '../../components/ProductImageCarousel';
-import { ProductCategory, PRODUCT_CATEGORIES } from '../../types/product';
-import { Product } from '../../types/product'; 
+import { Product } from '../../types/product';
 
+// مكونات الصفحة الرئيسية
+import SearchBar from '../home/SearchBar';
+import FeatureBanner from '../home/FeatureBanner';
+import StoreFeatures from '../home/StoreFeatures';
+import CategorySection from '../home/CategorySection';
+import ProductStrip from '../home/ProductStrip';
+import NewsletterSection from '../home/NewsletterSection';
+
+// الصور
 import offerImg from '../../assets/offer.png';
 import phoneoffer from '../../assets/phoneoffer.png';
-import SaudiRiyal from "../../assets/Saudi_Riyal.png";
+
+// واجهة لوصف البيانات المستخدمة
+interface CategoryStatistics {
+  name: string;
+  count: number;
+  icon: string;
+}
+
+// واجهة لمنتج مع الإحصائيات
+interface TopSellingProduct {
+  id: number;
+  name: string;
+  sales: number;
+  revenue: number;
+}
 
 const Home: React.FC = () => {
   const {
@@ -22,15 +43,30 @@ const Home: React.FC = () => {
     filteredProducts,
     searchQuery,
     setSearchQuery,
-    loading
+    loading: productsLoading,
+    products: allProducts,
   } = useProductManagement();
 
+  const [discountedProducts, setDiscountedProducts] = useState<Product[]>([]);
+  const [topSellingProducts, setTopSellingProducts] = useState<Product[]>([]);
+  const [newArrivalsProducts, setNewArrivalsProducts] = useState<Product[]>([]);
+  const [categoryStats, setCategoryStats] = useState<CategoryStatistics[]>([]);
+  
+  // حالات التحميل والأخطاء
+  const [discountedLoading, setDiscountedLoading] = useState(true);
+  const [topSellingLoading, setTopSellingLoading] = useState(true);
+  const [newArrivalsLoading, setNewArrivalsLoading] = useState(true);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  
+  const [discountedError, setDiscountedError] = useState<string | null>(null);
+  const [topSellingError, setTopSellingError] = useState<string | null>(null);
+  const [newArrivalsError, setNewArrivalsError] = useState<string | null>(null);
+  const [categoriesError, setCategoriesError] = useState<string | null>(null);
+
+  // دالة لإضافة منتج للسلة مع عرض رسالة توست
   const handleAddToCartWithToast = (product: Product) => {
     try {
-      // استدعاء دالة إضافة المنتج للسلة
       handleAddToCart(product);
-      
-      // عرض رسالة نجاح
       toast.success(`تمت إضافة 1 من ${product.name} للسلة`, {
         position: "bottom-right",
         autoClose: 3000,
@@ -40,419 +76,271 @@ const Home: React.FC = () => {
     }
   };
 
+  // استدعاء بيانات المنتجات المخفضة
+  useEffect(() => {
+    const fetchDiscountedProducts = async () => {
+      try {
+        setDiscountedLoading(true);
+        setDiscountedError(null);
+        const discounted = await productService.getProductsWithDiscounts();
+        setDiscountedProducts(discounted.filter(product => product.hasDiscount));
+      } catch (error) {
+        console.error("Error fetching discounted products:", error);
+        setDiscountedError('فشل في تحميل المنتجات المخفضة');
+        // استخدام بيانات احتياطية
+        setDiscountedProducts(allProducts.slice(0, 4));
+      } finally {
+        setDiscountedLoading(false);
+      }
+    };
+
+    fetchDiscountedProducts();
+  }, [allProducts]);
+
+  // استدعاء بيانات المنتجات الأكثر مبيعاً
+  useEffect(() => {
+    const fetchTopSellingProducts = async () => {
+      try {
+        setTopSellingLoading(true);
+        setTopSellingError(null);
+        
+        // محاولة الحصول على المنتجات الأكثر مبيعاً
+        let topProducts: Product[] = [];
+        
+        try {
+          // محاولة استدعاء واجهة الـ API
+          const topSelling = await productService.getTopSellingProducts(4);
+          
+          // إذا نجحت العملية، نستدعي بيانات المنتجات كاملة
+          const topSellingDetails = await Promise.all(
+            topSelling.map(item => productService.getProductById(item.id))
+          );
+          
+          topProducts = topSellingDetails;
+        } catch (apiError) {
+          console.error("API Error:", apiError);
+          // استخدام بيانات من قائمة المنتجات المحلية بترتيب عشوائي
+          topProducts = [...allProducts]
+            .sort(() => 0.5 - Math.random())
+            .slice(0, 4);
+        }
+        
+        setTopSellingProducts(topProducts);
+      } catch (error) {
+        console.error("Error fetching top selling products:", error);
+        setTopSellingError('فشل في تحميل المنتجات الأكثر مبيعاً');
+        // استخدام بيانات احتياطية من المنتجات
+        setTopSellingProducts(allProducts.slice(0, 4));
+      } finally {
+        setTopSellingLoading(false);
+      }
+    };
+
+    if (allProducts.length > 0) {
+      fetchTopSellingProducts();
+    }
+  }, [allProducts]);
+
+  // استدعاء بيانات المنتجات الجديدة
+  useEffect(() => {
+    const fetchNewArrivalsProducts = async () => {
+      try {
+        setNewArrivalsLoading(true);
+        setNewArrivalsError(null);
+        
+        // تصنيف المنتجات حسب تاريخ الإضافة
+        const sorted = [...allProducts].sort((a, b) => {
+          // إذا لم يكن هناك تاريخ، نستخدم قيمة افتراضية
+          const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return dateB - dateA;
+        });
+        
+        setNewArrivalsProducts(sorted.slice(0, 4));
+      } catch (error) {
+        console.error("Error processing new arrivals:", error);
+        setNewArrivalsError('فشل في تحميل المنتجات الجديدة');
+        // استخدام بيانات احتياطية
+        setNewArrivalsProducts(allProducts.slice(0, 4));
+      } finally {
+        setNewArrivalsLoading(false);
+      }
+    };
+
+    if (allProducts.length > 0) {
+      fetchNewArrivalsProducts();
+    }
+  }, [allProducts]);
+
+  // استدعاء بيانات فئات المنتجات
+  useEffect(() => {
+    const fetchCategoryStats = async () => {
+      try {
+        setCategoriesLoading(true);
+        setCategoriesError(null);
+        
+        // جلب إحصائيات الفئات
+        const stats = await productService.getProductStats();
+        if (stats?.productsByCategory) {
+          // تحويل البيانات إلى الشكل المطلوب مع إضافة أيقونات
+          const categoryData = stats.productsByCategory.map(category => {
+            // تعيين أيقونة مختلفة لكل فئة
+            let icon = "M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10";
+            
+            if (category.category === "الإلكترونيات") {
+              icon = "M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z";
+            } else if (category.category === "الملابس") {
+              icon = "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z";
+            } else if (category.category === "المنزل") {
+              icon = "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6";
+            } else if (category.category === "سماعات") {
+              icon = "M12 18.5a6.5 6.5 0 0 0 0-13M19 12a7 7 0 0 1-7 7m7-7a7 7 0 0 0-7-7M3 12h4m14 0h-4";
+            } else if (category.category === "ساعات") {
+              icon = "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z";
+            } else if (category.category === "شواحن") {
+              icon = "M13 10V3L4 14h7v7l9-11h-7z";
+            } else if (category.category === "حقائب") {
+              icon = "M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7";
+            } else if (category.category === "مستلزمات الكمبيوتر") {
+              icon = "M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z";
+            }
+            
+            return {
+              name: category.category,
+              count: category.count,
+              icon
+            };
+          });
+          setCategoryStats(categoryData);
+        }
+      } catch (error) {
+        console.error("Error fetching category stats:", error);
+        setCategoriesError('فشل في تحميل بيانات الفئات');
+        
+        // إنشاء فئات افتراضية
+        const defaultCategories = [
+          { name: "الإلكترونيات", count: 0, icon: "M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" },
+          { name: "الملابس", count: 0, icon: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" },
+          { name: "المنزل", count: 0, icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" }
+        ];
+        
+        setCategoryStats(defaultCategories);
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
+
+    fetchCategoryStats();
+  }, []);
+
+  // تحقق مما إذا كان المنتج في المفضلة
+  const isProductInFavorites = (productId: number): boolean => {
+    return favorites.includes(productId);
+  };
+
+  // الرمز لشريط المنتجات الأكثر مبيعاً
+  const topSellingIcon = (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path 
+        strokeLinecap="round" 
+        strokeLinejoin="round" 
+        strokeWidth={2} 
+        d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+      />
+    </svg>
+  );
+
+  // الرمز لشريط المنتجات الجديدة
+  const newArrivalsIcon = (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path 
+        strokeLinecap="round" 
+        strokeLinejoin="round" 
+        strokeWidth={2} 
+        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    </svg>
+  );
+
+  // الرمز لشريط العروض والتخفيضات
+  const discountIcon = (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path 
+        strokeLinecap="round" 
+        strokeLinejoin="round" 
+        strokeWidth={2} 
+        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    </svg>
+  );
+
   return (
     <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 rtl">
+      {/* شريط البحث */}
+      <SearchBar 
+        searchQuery={searchQuery} 
+        setSearchQuery={setSearchQuery} 
+        loading={productsLoading} 
+      />
 
-<div className="flex justify-center mb-6 sm:mb-8">
-        <div className="w-full max-w-2xl bg-white p-2 sm:p-3 rounded-xl shadow-md flex gap-2 sm:gap-4 relative">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="ابحث عن منتجات..."
-            className="flex-1 p-2 sm:p-3 text-sm sm:text-base border border-gray-200 rounded-lg 
-                      focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-gray-50"
-          />
-          
-          {/* أيقونة التحميل */}
-          {loading && (
-            <div className="absolute left-3 top-1/2 -translate-y-1/2">
-              <div className="w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
-            </div>
-          )}
+      {/* بانر إعلاني رئيسي */}
+      <FeatureBanner 
+        mainImageUrl={offerImg}
+        mobileImageUrl={phoneoffer}
+        title="عروض نهاية العام"
+        description="تسوق الآن واحصل على خصم يصل إلى 70% على جميع المنتجات"
+        buttonText="تسوق الآن"
+      />
 
-          {/* زر البحث */}
-          <button 
-            onClick={() => searchQuery && setSearchQuery('')}
-            className="bg-purple-600 text-white p-2 sm:p-3 rounded-lg hover:bg-purple-700 
-                      transition-colors duration-300 shadow-sm hover:shadow-md"
-          >
-            {searchQuery ? (
-              // أيقونة المسح
-              <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                className="h-5 w-5 sm:h-6 sm:w-6" 
-                fill="none" 
-                viewBox="0 0 24 24" 
-                stroke="currentColor"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            ) : (
-              // أيقونة البحث
-              <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                className="h-5 w-5 sm:h-6 sm:w-6" 
-                fill="none" 
-                viewBox="0 0 24 24" 
-                stroke="currentColor"
-              >
-                <path 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth={2} 
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" 
-                />
-              </svg>
-            )}
-          </button>
-        </div>
-      </div>
-{/* بانر إعلاني رئيسي */}
-<div className="container mx-auto px-2 sm:px-4 py-2 sm:py-8 rtl">
-<div className="mb-4 sm:mb-8 rounded-lg overflow-hidden shadow-md border border-gray-200">
-    <div className="relative   ">
-      {/* الصورة بإطار كامل - صورة مختلفة للشاشات الصغيرة */}
-      <div className="w-full ">
-        {/* صورة للشاشات الكبيرة */}
-        <img 
-          src={offerImg} 
-          alt="عروض خاصة" 
-          className="w-full object-cover hidden sm:block" 
-          style={{ height: "200px" }}
+      {/* قسم مميزات المتجر */}
+      <StoreFeatures />
+
+      {/* عرض فئات المنتجات */}
+      {!categoriesError && categoryStats.length > 0 && (
+        <CategorySection categories={categoryStats} />
+      )}
+
+      {/* شريط المنتجات المخفضة - معالجة حالة عدم وجود منتجات مخفضة */}
+      {(discountedProducts?.length > 0 || discountedLoading || discountedError) && (
+        <ProductStrip 
+          title="عروض وتخفيضات" 
+          products={discountedProducts?.slice(0, 4)} 
+          viewAllLink="/products/discounted"
+          emptyMessage="لا توجد عروض متاحة حالياً"
+          onAddToCart={handleAddToCartWithToast}
+          onAddToFavorite={handleFavorite}
+          isProductInFavorites={isProductInFavorites}
+          isProductAvailable={isProductAvailable}
+
         />
-        
-        {/* صورة للشاشات الصغيرة */}
-       
-        <img 
-          src={phoneoffer} 
-          alt="عروض خاصة للجوال" 
-          className="w-full object-cover sm:hidden  " 
-          style={{ height: "150px"  }}
-        />
-     
-      </div>
-       {/* النص مع زر التسوق - على يمين الصورة للشاشات الكبيرة */}
-       <div className="sm:absolute sm:top-0 sm:right-0 sm:h-full sm:flex sm:items-center hidden sm:block">
-        <div className="p-6 mr-8 rounded-lg bg-purple-900 bg-opacity-80 text-right">
-          <h2 className="text-2xl font-bold mb-2 text-white">عروض حصرية لفترة محدودة</h2>
-          <p className="text-purple-100 mb-4 text-base">تسوق الآن واحصل على خصم يصل إلى 70%</p>
-          <button className="bg-white text-purple-700 px-5 py-2 rounded-lg font-medium hover:bg-purple-100 transition-colors duration-300 text-base">
-            تسوق الآن
-          </button>
-        </div>
-      </div>
+      )}
       
-      {/* النص مع زر التسوق - في الوسط أسفل الصورة للشاشات الصغيرة */}
-      <div className="sm:hidden mt-2">
-        <div className="p-3 rounded-lg bg-purple-900 bg-opacity-80 text-center mx-auto">
-          <h2 className="text-lg font-bold mb-1 text-white">عروض حصرية لفترة محدودة</h2>
-          <p className="text-purple-100 mb-2 text-sm">تسوق الآن واحصل على خصم يصل إلى 70%</p>
-          <button className="bg-white text-purple-700 px-3 py-1 rounded-lg font-medium hover:bg-purple-100 transition-colors duration-300 text-sm">
-            تسوق الآن
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+      {/* شريط المنتجات الأكثر مبيعاً */}
+      <ProductStrip 
+        title="الأكثر مبيعاً" 
+        products={topSellingProducts} 
+        viewAllLink="/products/top-selling"
+        emptyMessage="لم يتم تحديد المنتجات الأكثر مبيعاً بعد"
+        onAddToCart={handleAddToCartWithToast}
+        onAddToFavorite={handleFavorite}
+        isProductInFavorites={isProductInFavorites}
+        isProductAvailable={isProductAvailable}
+      />
 
+      {/* شريط أحدث المنتجات */}
+      <ProductStrip 
+        title="وصل حديثاً" 
+        products={newArrivalsProducts} 
+        viewAllLink="/products/new-arrivals"
+        emptyMessage="لا توجد منتجات جديدة حالياً"
+        onAddToCart={handleAddToCartWithToast}
+        onAddToFavorite={handleFavorite}
+        isProductInFavorites={isProductInFavorites}
+        isProductAvailable={isProductAvailable}
+      />
 
-    
- 
-
-          
-          {/* زخرفة خلفية */}
-          <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-purple-500 rounded-full opacity-20"></div>
-          <div className="absolute -top-10 -left-10 w-40 h-40 bg-purple-500 rounded-full opacity-20"></div>
- 
-      {/* شريط البحث مع تصميم محسن */}
-     
-
-      {/* خصائص المتجر */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
-        <div className="bg-white rounded-lg p-3 flex items-center gap-3 shadow-sm border border-gray-100">
-          <div className="bg-purple-100 p-2 rounded-lg">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-            </svg>
-          </div>
-          <div>
-            <p className="text-xs sm:text-sm font-medium text-gray-800">شحن سريع</p>
-            <p className="text-xs text-gray-500">توصيل بين يوم الى 3 أيام</p>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg p-3 flex items-center gap-3 shadow-sm border border-gray-100">
-          <div className="bg-purple-100 p-2 rounded-lg">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
-          </div>
-          <div>
-            <p className="text-xs sm:text-sm font-medium text-gray-800">ضمان الجودة</p>
-            <p className="text-xs text-gray-500">منتجات أصلية 100%</p>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg p-3 flex items-center gap-3 shadow-sm border border-gray-100">
-          <div className="bg-purple-100 p-2 rounded-lg">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-            </svg>
-          </div>
-          <div>
-            <p className="text-xs sm:text-sm font-medium text-gray-800">الدفع الآمن</p>
-            <p className="text-xs text-gray-500">طرق دفع متعددة</p>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg p-3 flex items-center gap-3 shadow-sm border border-gray-100">
-          <div className="bg-purple-100 p-2 rounded-lg">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-            </svg>
-          </div>
-          <div>
-            <p className="text-xs sm:text-sm font-medium text-gray-800">دعم فني</p>
-            <p className="text-xs text-gray-500">على مدار الساعة</p>
-          </div>
-        </div>
-      </div>
-
-      {/* فلتر التصنيف مع تصميم محسن */}
-      <div className="mb-8">
-        <h2 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-          </svg>
-          تصفية المنتجات
-        </h2>
-        <div className="bg-white p-4 rounded-lg shadow-sm mb-4">
-          <div className="flex flex-wrap gap-2">
-            <button
-              className={`px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm rounded-lg transition-colors 
-                        ${selectedCategory === null
-                          ? 'bg-purple-600 text-white hover:bg-purple-700 shadow-sm'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-              onClick={() => handleCategoryChange(null)}
-            >
-              الكل
-            </button>
-            {PRODUCT_CATEGORIES.map((category: ProductCategory) => (
-              <button
-                key={category}
-                className={`px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm rounded-lg transition-colors 
-                          ${selectedCategory === category
-                            ? 'bg-purple-600 text-white hover:bg-purple-700 shadow-sm'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-                onClick={() => handleCategoryChange(category)}
-              >
-                {category}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* بانر إعلاني ثانوي */}
-      <div className="mb-8">
-        <div className="bg-gradient-to-r from-purple-100 to-indigo-100 rounded-lg overflow-hidden shadow-sm border border-purple-200">
-          <div className="flex items-center p-4">
-            <div className="flex-1">
-              <h3 className="text-lg font-bold text-purple-800 mb-1">عرض خاص على الإلكترونيات</h3>
-              <p className="text-sm text-purple-700 mb-3">خصم 15% لفترة محدودة</p>
-              <button className="bg-purple-600 text-white px-4 py-1.5 rounded-lg text-sm hover:bg-purple-700 transition-colors duration-300">
-                تسوق الآن
-              </button>
-            </div>
-            <div className="hidden sm:block">
-          
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* عنوان قسم المنتجات */}
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8" />
-          </svg>
-          منتجاتنا
-        </h2>
-        <a href="#" className="text-purple-600 text-sm font-medium hover:text-purple-800 transition-colors flex items-center gap-1">
-          عرض الكل
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </a>
-      </div>
-
-      {/* شبكة المنتجات */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
-        {filteredProducts.map((product, index) => (
-          <div 
-            key={product.id} 
-            className="group bg-white rounded-xl shadow-sm hover:shadow-xl 
-                      transition-all duration-300 border border-gray-100 overflow-hidden
-                      animate-fadeIn opacity-0"
-            style={{
-              animationDelay: `${index * 50}ms`,
-              animationFillMode: 'forwards'
-            }}
-          >
-            {/* قسم الصورة */}
-            <div className="relative overflow-hidden">
-              {/* شارة المخزون */}
-              <div className="absolute top-2 right-2 z-10">
-                {product.stock > 10 ? (
-                  <span className="bg-green-500 text-white text-xs px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full text-[10px] sm:text-xs">
-                    متوفر
-                  </span>
-                ) : product.stock > 0 ? (
-                  <span className="bg-yellow-500 text-white text-xs px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full text-[10px] sm:text-xs">
-                    كمية محدودة
-                  </span>
-                ) : (
-                  <span className="bg-red-500 text-white text-xs px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full text-[10px] sm:text-xs">
-                    نفذ المخزون
-                  </span>
-                )}
-              </div>
-
-              <ProductImageCarousel
-                images={product.images}
-                productName={product.name}
-              />
-
-              {/* زر المفضلة محسن */}
-              <button 
-                onClick={() => handleFavorite(product)}
-                className={`absolute top-2 left-2 z-10 p-1.5 rounded-full 
-                           ${favorites.includes(product.id) 
-                             ? 'bg-red-500 text-white' 
-                             : 'bg-white/80 text-gray-500 hover:bg-white hover:text-red-500'}
-                           transition-colors duration-300 shadow-sm`}
-              >
-                <svg 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  className="h-5 w-5"
-                  fill={favorites.includes(product.id) ? 'currentColor' : 'none'}
-                  viewBox="0 0 24 24" 
-                  stroke="currentColor"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                        d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                </svg>
-              </button>
-            </div>
-
-            {/* محتوى المنتج */}
-            <div className="p-3 sm:p-4">
-              <Link to={`/product/${product.id}`}>
-                <h3 className="text-sm sm:text-base font-bold text-gray-800 line-clamp-2 
-                             hover:text-purple-600 transition-colors duration-300 mb-1">
-                  {product.name}
-                </h3>
-              </Link>
-
-              <p className="text-xs sm:text-sm text-gray-600 mb-3 line-clamp-2">
-                {product.description}
-              </p>
-
- {/* قسم عرض السعر والخصم */}
-<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-  <div className="space-y-0.5">
-    {product.hasDiscount ? (
-      <div className="flex flex-col">
-        <div className="flex items-center mb-1">
-          <span className="text-sm line-through text-gray-500 ml-2">
-            {product.price.toLocaleString('ar-SA')}
-          </span>
-          <img src={SaudiRiyal} alt="SAR" className="w-4 h-4" />
-        </div>
-        <div className="flex items-center gap-1">
-          <span className="text-lg sm:text-xl font-bold text-green-600">
-            {product.discountedPrice?.toLocaleString('ar-SA')}
-          </span>
-          <img src={SaudiRiyal} alt="SAR" className="w-5 h-5" />
-          <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full mx-1">
-            {product.discountType === 'Percentage' ? `${product.discountValue}%` : `خصم ${product.discountValue} ريال`}
-          </span>
-        </div>
-      </div>
-    ) : (
-      <div className="flex items-center gap-1">
-        <span className="text-lg sm:text-xl font-bold text-purple-600">
-          {product.price.toLocaleString('ar-SA')}
-        </span>
-        <img src={SaudiRiyal} alt="SAR" className="w-5 h-5" />
-      </div>
-    )}
-
-    {product.stock <= 10 && product.stock > 0 && (
-      <div className="flex items-center gap-1">
-        <span className="text-xs text-gray-500">المخزون:</span>
-        <span className="text-xs font-medium text-red-600">
-          {product.stock}
-        </span>
-      </div>
-    )}
-  </div>
-</div>
-
-
-                <button 
-                  onClick={() => isProductAvailable(product) && handleAddToCartWithToast(product)}
-                  disabled={!isProductAvailable(product)}
-                  className={`w-full sm:w-auto px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg 
-                              transition-all duration-300
-                              flex items-center justify-center gap-1.5
-                              ${isProductAvailable(product)
-                                ? 'bg-purple-600 hover:bg-purple-700 active:scale-95'
-                                : 'bg-purple-300 cursor-not-allowed'
-                              } 
-                              text-white`}
-                >
-                  
-                  <svg xmlns="http://www.w3.org/2000/svg" 
-                       className="h-4 w-4 sm:h-5 sm:w-5" 
-                       fill="none" 
-                       viewBox="0 0 24 24" 
-                       stroke="currentColor"
-                  >
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth={2} 
-                      d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" 
-                    />
-                  </svg>
-                  <span className="text-xs sm:text-sm">
-                    {isProductAvailable(product) ? 'إضافة للسلة' : 'غير متوفر'}
-                  </span>
-                </button>
-              </div>
-            </div>
-          
-        ))}
-      </div>
-
-      {/* بانر اشتراك نشرة بريدية */}
-      <div className="mt-12 bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="bg-gradient-to-r from-purple-600 to-purple-800 p-6 text-white">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="text-center md:text-right">
-              <h3 className="text-xl font-bold mb-2">اشترك في نشرتنا البريدية</h3>
-              <p className="text-purple-100 text-sm">احصل على آخر العروض والتخفيضات مباشرة إلى بريدك الإلكتروني</p>
-            </div>
-            <div className="w-full md:w-auto">
-              <div className="flex">
-                <input
-                  type="email"
-                  placeholder="بريدك الإلكتروني"
-                  className="flex-1 rounded-r-lg px-4 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-300"
-                />
-                <button
-                  className="bg-white text-purple-700 hover:bg-purple-100 px-4 py-2 rounded-l-lg font-medium transition-colors"
-                >
-                  اشتراك
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    
+      {/* قسم الاشتراك في النشرة البريدية */}
+      <NewsletterSection />
     </div>
   );
 };
