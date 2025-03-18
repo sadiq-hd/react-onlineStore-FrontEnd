@@ -28,9 +28,10 @@ import ProductDetailsPage from './pages/ProductDetailsPage';
 import AdminOrderDetails from './pages/orderes/AdminOrderDetails';
 import DiscountsManagement from './pages/DiscountsManagement';
 import ForgotPassword from './pages/auth/ForgotPassword';
+import AdminReviewsPage from './pages/AdminReviewsPage';
+import AdminCommentsPage from './pages/AdminCommentsPage';
 
 // صفحات الخصومات وأكواد الخصم الجديدة
-
 
 const App: FC = () => {
   return (
@@ -157,7 +158,7 @@ const App: FC = () => {
                 }
               />
 
-<Route
+              <Route
                 path="/admin/DiscountsManagement"
                 element={
                   <PrivateRoute adminOnly>
@@ -166,9 +167,24 @@ const App: FC = () => {
                 }
               />
               
-         
+              {/* مسارات المراجعات والتعليقات للمشرف */}
+              <Route
+                path="/admin/AdminReviewsPage"
+                element={
+                  <PrivateRoute adminOnly>
+                    <AdminReviewsPage />
+                  </PrivateRoute>
+                }
+              />
               
-         
+              <Route
+                path="/admin/AdminCommentsPage"
+                element={
+                  <PrivateRoute adminOnly>
+                    <AdminCommentsPage />
+                  </PrivateRoute>
+                }
+              />
             </Routes>
           </main>
 

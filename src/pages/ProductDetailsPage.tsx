@@ -14,6 +14,9 @@ import {
 import { toast } from 'react-toastify';
 import { useCart } from '../context/CartContext';
 import SaudiRiyal from "../assets/Saudi_Riyal.png";
+import ReviewSection from '../components/reviews/ReviewSection';
+import CommentSection from '../components/reviews/CommentSection';
+import RatingStars from '../components/reviews/RatingStars';
 
 const ProductDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -24,6 +27,7 @@ const ProductDetailsPage: React.FC = () => {
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
   const [isAddingToCart, setIsAddingToCart] = useState<boolean>(false);
   const [zoomedImage, setZoomedImage] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<'overview' | 'reviews' | 'comments'>('overview');
   const cartContext = useCart();
 
   useEffect(() => {
@@ -204,16 +208,17 @@ const ProductDetailsPage: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold mb-2">{product.name}</h1>
           
+          {/* التقييمات */}
           <div className="flex items-center gap-2 mb-4">
             <div className="flex text-yellow-500">
-              {[...Array(5)].map((_, i) => (
-                <Star 
-                  key={i} 
-                  className={`w-5 h-5 ${i < 4 ? 'fill-yellow-500' : ''}`} 
-                />
-              ))}
+              <RatingStars 
+                rating={product.averageRating ? Number(product.averageRating) : 0} 
+                size="sm" 
+              />
             </div>
-            <span className="text-gray-600 text-sm">(4 تقييمات)</span>
+            <span className="text-gray-600 text-sm">
+              ({product.totalReviews || 0} تقييم)
+            </span>
           </div>
 
           <div className="mb-4">
@@ -305,36 +310,87 @@ const ProductDetailsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* معلومات إضافية */}
-      <div className="mt-12">
-        <div className="border-b pb-2 mb-4">
-          <h2 className="text-xl font-semibold">تفاصيل المنتج</h2>
+      {/* تبويبات المعلومات والتقييمات والتعليقات */}
+      <div className="mt-10">
+        <div className="border-b mb-6">
+          <ul className="flex flex-wrap -mb-px">
+            <li className="ml-4">
+              <button
+                onClick={() => setActiveTab('overview')}
+                className={`inline-block py-4 px-1 border-b-2 font-medium text-sm
+                  ${activeTab === 'overview'
+                    ? 'border-purple-600 text-purple-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+              >
+                نظرة عامة
+              </button>
+            </li>
+            <li className="ml-4">
+              <button
+                onClick={() => setActiveTab('reviews')}
+                className={`inline-block py-4 px-1 border-b-2 font-medium text-sm
+                  ${activeTab === 'reviews'
+                    ? 'border-purple-600 text-purple-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+              >
+                التقييمات ({product.totalReviews || 0})
+              </button>
+            </li>
+            <li className="ml-4">
+              <button
+                onClick={() => setActiveTab('comments')}
+                className={`inline-block py-4 px-1 border-b-2 font-medium text-sm
+                  ${activeTab === 'comments'
+                    ? 'border-purple-600 text-purple-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+              >
+                التعليقات
+              </button>
+            </li>
+          </ul>
         </div>
-        <div className="grid md:grid-cols-2 gap-4">
-          <div>
-            <h3 className="font-medium mb-2">الوصف</h3>
-            <p className="text-gray-600">{product.description}</p>
-          </div>
-          <div>
-            <h3 className="font-medium mb-2">المواصفات</h3>
-            <ul className="space-y-2 text-gray-600">
-              <li>
-                <span className="font-medium">التصنيف:</span> {product.category}
-              </li>
-              <li>
-                <span className="font-medium">المخزون:</span> {product.stock} قطعة
-              </li>
-              {product.hasDiscount && (
-                <li>
-                  <span className="font-medium">الخصم:</span> {' '}
-                  {product.discountType === 'Percentage' 
-                    ? `${product.discountValue}%` 
-                    : `${product.discountValue} ريال`}
-                </li>
-              )}
-              {/* يمكنك إضافة المزيد من التفاصيل هنا */}
-            </ul>
-          </div>
+
+        {/* محتوى التبويب النشط */}
+        <div className="mt-4">
+          {activeTab === 'overview' && (
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="font-medium mb-3 text-xl">الوصف</h3>
+                <p className="text-gray-600">{product.description}</p>
+              </div>
+              <div>
+                <h3 className="font-medium mb-3 text-xl">المواصفات</h3>
+                <ul className="space-y-2 text-gray-600">
+                  <li className="flex justify-between py-2 border-b">
+                    <span className="font-medium">التصنيف:</span>
+                    <span>{product.category}</span>
+                  </li>
+                  <li className="flex justify-between py-2 border-b">
+                    <span className="font-medium">المخزون:</span>
+                    <span>{product.stock} قطعة</span>
+                  </li>
+                  {product.hasDiscount && (
+                    <li className="flex justify-between py-2 border-b">
+                      <span className="font-medium">الخصم:</span>
+                      <span>
+                        {product.discountType === 'Percentage' 
+                          ? `${product.discountValue}%` 
+                          : `${product.discountValue} ريال`}
+                      </span>
+                    </li>
+                  )}
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'reviews' && (
+            <ReviewSection productId={product.id} />
+          )}
+
+          {activeTab === 'comments' && (
+            <CommentSection productId={product.id} />
+          )}
         </div>
       </div>
 
