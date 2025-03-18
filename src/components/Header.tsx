@@ -162,6 +162,12 @@ const Header: React.FC = () => {
                           <Link to="/admin/DiscountsManagement" onClick={closeMenus} className="block px-4 py-2 text-gray-800 hover:bg-purple-500">
                       ادارة التخفيضات
                     </Link>
+                    <Link to="/admin/AdminReviewsPage" onClick={closeMenus} className="block px-4 py-2 text-gray-800 hover:bg-purple-500">
+  إدارة المراجعات
+</Link>
+<Link to="/admin/AdminCommentsPage" onClick={closeMenus} className="block px-4 py-2 text-gray-800 hover:bg-purple-500">
+  إدارة التعليقات
+</Link>
                         </>
                       )}
                       
@@ -257,6 +263,12 @@ const Header: React.FC = () => {
                     <Link to="/admin/DiscountsManagement" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">
                       ادارة التخفيضات
                     </Link>
+                    <Link to="/admin/reviews" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">
+  إدارة المراجعات
+</Link>
+<Link to="/admin/comments" onClick={closeMenus} className="block py-2.5 text-white text-center hover:bg-purple-500">
+  إدارة التعليقات
+</Link>
                     
                   </>
                 )}
