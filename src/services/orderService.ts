@@ -468,6 +468,35 @@ class OrderService {
         console.log("الفرق بالساعات:", hoursDiff);
         return ![OrderStatus.Shipped, OrderStatus.Delivered, OrderStatus.Cancelled].includes(order.status as OrderStatus);
     }
+    
+async getProfitReport(filter?: { fromDate?: string; toDate?: string }): Promise<{
+    totalRevenue: number;
+    totalVat: number;
+    totalDeliveryFees: number;
+    netProfit: number;
+    orderCount: number;
+    averageOrderValue: number;
+}> {
+    try {
+        console.log("Fetching profit report with filter:", filter);
+        
+        const response = await api.get(`${this.basePath}/profit-report`, {
+            params: filter
+        });
+        
+        console.log("Received profit report:", response.data);
+        
+        if (!response.data) {
+            console.warn("No data received from profit report API");
+            throw new Error("لم يتم استلام بيانات من واجهة برمجة التطبيقات");
+        }
+        
+        return response.data;
+    } catch (error) {
+        console.error("Error in getProfitReport:", error);
+        throw handleApiError(error);
+    }
+}
 }
 
 export const orderService = new OrderService();

@@ -29,9 +29,13 @@ export interface TopProduct {
 }
 
 export interface SalesData {
-  name: string;
+  name?: string; // اجعلها اختيارية
+  date: string;
   sales: number;
-  revenue?: number;
+  revenue: number;
+  subTotal: number;
+  vat: number;
+  deliveryFees: number;
 }
 
 export interface DashboardCalculations {
