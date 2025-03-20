@@ -14,11 +14,13 @@ export default tseslint.config(
       globals: globals.browser,
     },
     plugins: {
+      'react': react,
       'react-hooks': reactHooks,
       'react-refresh': reactRefresh,
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
+      "react/jsx-key": "off",  
       'react-refresh/only-export-components': [
         'warn',
         { allowConstantExport: true },
