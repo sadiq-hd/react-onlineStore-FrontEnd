@@ -14,22 +14,27 @@ export interface Product {
 
 export interface Customer {
   id: number;
-  name: string;
-  purchases: number;
-  totalSpent: number;
-  lastPurchase?: string;
-  email?: string;
-  phone?: string;
+    name: string;
+    email: string;
+    phone: string;
+    purchases?: number;
+    totalSpent: number;
+    lastPurchase?: string;
+    ordersCount?: number;
+    lastOrder?: string;
+    orders?: number;
+ 
 }
 
 export interface TopProduct {
   name: string;
   sales: number;
   revenue?: number;
+  
 }
 
 export interface SalesData {
-  name?: string; // اجعلها اختيارية
+  name: string;
   date: string;
   sales: number;
   revenue: number;

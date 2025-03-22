@@ -221,13 +221,36 @@ const AdminDashboard: FC = () => {
                                         topCustomers.map((customer) => (
                                             <tr key={customer.id}>
     <td className="px-6 py-4 font-medium text-gray-900">{customer.name}</td>
-    <td className="px-6 py-4 text-gray-500">{customer.purchases}</td>
+    <td className="px-6 py-4 text-gray-500">{customer.ordersCount}</td>
     <td className="px-6 py-4 text-gray-500">
         {formatCurrency(customer.totalSpent)}
     </td>
     <td className="px-6 py-4 text-gray-500">
-        {customer.lastPurchase ? new Date(customer.lastPurchase).toLocaleDateString('ar-SA') : '-'}
-    </td>
+  {(() => {
+    // استخدام أي من الحقول المتاحة باستخدام واجهة Customer
+    const dateString = customer.lastOrder || customer.lastPurchase;
+    
+    if (!dateString) return '-';
+    
+    try {
+      // التحقق إذا كان التاريخ بتنسيق هجري
+      if (typeof dateString === 'string' && dateString.includes('هـ')) {
+        return dateString;
+      }
+      
+      // محاولة تحويل التاريخ
+      const date = new Date(dateString);
+      
+      // التحقق من صحة التاريخ
+      return !isNaN(date.getTime()) 
+        ? date.toLocaleDateString('ar-SA')
+        : '-';
+    } catch (error) {
+      console.error("خطأ في تنسيق التاريخ:", error);
+      return '-';
+    }
+  })()}
+</td>
 </tr>
                                         ))
                                     ) : (

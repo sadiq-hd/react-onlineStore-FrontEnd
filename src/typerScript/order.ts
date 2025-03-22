@@ -1,4 +1,3 @@
-
 export interface OrderUser {
     id: number;
     name: string;
@@ -167,9 +166,12 @@ export interface TopCustomer {
     name: string;
     email: string;
     phone: string;
-    purchases: number;
+    purchases?: number;
     totalSpent: number;
-    lastPurchase: string;
+    lastPurchase?: string;
+    ordersCount?: number;
+    lastOrder?: string;
+    orders?: number;
 }
 
 export interface AdminOrdersData {

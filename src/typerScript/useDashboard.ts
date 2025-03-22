@@ -8,7 +8,7 @@ import {
     StockStatus
 } from '../types/dashboard';
 import { Product as ProductType } from '../types/product';
-import { SalesData } from '../types/dashboard';
+import { SalesData , Customer } from '../types/dashboard';
 
 interface DailyOrder {
   date: string;
@@ -24,14 +24,7 @@ interface TopProduct {
   revenue: number;
 }
 
-interface Customer {
-  id: number;
-  name: string;
-  ordersCount?: number; // جعلها اختيارية
-  purchases: number;
-  totalSpent: number;
-  lastPurchase: string;
-}
+
 
 // تعريف SalesAnalytics ليتوافق مع البيانات المستخدمة
 interface SalesAnalytics {
@@ -128,7 +121,7 @@ export const useDashboard = () => {
                     
                     const formattedSalesData = salesData.map(sale => ({
                         name: new Date(sale.date).toLocaleDateString('ar-SA'),
-                        date: sale.date, // أضف هذا السطر للتأكد من أن date موجود
+                        date: sale.date,
                         sales: sale.sales,
                         revenue: sale.revenue,
                         subTotal: sale.subTotal,
@@ -211,30 +204,29 @@ export const useDashboard = () => {
                 try {
                     const topCustomersData = await orderService.getTopCustomers();
                     
-                    // معالجة التواريخ قبل تعيين البيانات
+                    // طباعة البيانات للتصحيح
+                    console.log('البيانات المستلمة للعملاء:', topCustomersData);
+                    
+                    // معالجة البيانات باستخدام واجهة Customer
                     const processedCustomers = topCustomersData.map(customer => {
-                        // التعامل مع التاريخ بحذر
-                        let lastPurchaseDate;
-                        try {
-                            if (customer.lastPurchase) {
-                                lastPurchaseDate = customer.lastPurchase;
-                            } else {
-                                lastPurchaseDate = new Date().toISOString();
-                            }
-                        } catch (error) {
-                            console.error("Error with date format:", error);
-                            lastPurchaseDate = new Date().toISOString();
-                        }
-                        
-                        return {
-                            ...customer,
-                            lastPurchase: lastPurchaseDate
+                        const processedCustomer: Customer = {
+                            id: customer.id,
+                            name: customer.name || '',
+                            email: customer.email || '',
+                            phone: customer.phone || '',
+                            totalSpent: customer.totalSpent || 0,
+                            ordersCount: customer.ordersCount ?? customer.orders ?? 0,
+                            lastOrder: customer.lastOrder,
+                            lastPurchase: customer.lastPurchase
                         };
+                        
+                        return processedCustomer;
                     });
                     
+                    console.log('بيانات العملاء بعد المعالجة:', processedCustomers);
                     setTopCustomers(processedCustomers);
                 } catch (error) {
-                    console.error('Error fetching top customers:', error);
+                    console.error('خطأ في جلب بيانات العملاء:', error);
                     setError('فشل في جلب بيانات العملاء الأكثر شراءً');
                     throw error;
                 }
@@ -248,7 +240,7 @@ export const useDashboard = () => {
         };
     
         fetchDashboardData();
-    }, []);
+    }, []); // المصفوفة الفارغة للتأكد من تنفيذ الدالة مرة واحدة عند تحميل المكون
   
     const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
         const searchValue = e.target.value.toLowerCase();
