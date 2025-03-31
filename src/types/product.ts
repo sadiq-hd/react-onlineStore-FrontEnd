@@ -36,6 +36,9 @@ export interface Product {
   discountName?: string;
   discountValue?: number;
   discountType?: string;
+
+  averageRating?: number;
+  totalReviews?: number;
 }
 
 export interface ProductWithDiscountDto {

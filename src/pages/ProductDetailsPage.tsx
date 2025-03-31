@@ -8,13 +8,15 @@ import {
   Share2, 
   ShoppingCart, 
   Truck, 
-  ArrowLeft, 
-  ArrowRight,
-  Check
+  Check,
+  X
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useCart } from '../context/CartContext';
 import SaudiRiyal from "../assets/Saudi_Riyal.png";
+import ReviewSection from '../components/reviews/ReviewSection';
+import CommentSection from '../components/reviews/CommentSection';
+import RatingStars from '../components/reviews/RatingStars';
 
 const ProductDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -24,6 +26,8 @@ const ProductDetailsPage: React.FC = () => {
   const [selectedImage, setSelectedImage] = useState<number>(0);
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
   const [isAddingToCart, setIsAddingToCart] = useState<boolean>(false);
+  const [zoomedImage, setZoomedImage] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<'overview' | 'reviews' | 'comments'>('overview');
   const cartContext = useCart();
 
   useEffect(() => {
@@ -91,7 +95,6 @@ const ProductDetailsPage: React.FC = () => {
         position: "bottom-right",
         autoClose: 3000,
       });
-
       
     } catch (error) {
       console.error('Error adding to cart:', error);
@@ -111,6 +114,10 @@ const ProductDetailsPage: React.FC = () => {
 
   const handleImageChange = (index: number) => {
     setSelectedImage(index);
+  };
+
+  const toggleZoom = () => {
+    setZoomedImage(!zoomedImage);
   };
 
   const handleQuantityChange = (type: 'increase' | 'decrease') => {
@@ -147,35 +154,52 @@ const ProductDetailsPage: React.FC = () => {
   return (
     <div className="container mx-auto px-4 py-8 rtl">
       <div className="grid md:grid-cols-2 gap-8">
-        {/* معرض الصور */}
+        {/* معرض الصور - تم تعديله ليكون بحجم ثابت */}
         <div>
-          <div className="relative mb-4">
-            <img 
-              src={product.images[selectedImage]?.imageUrl} 
-              alt={product.name} 
-              className="w-full h-[400px] object-cover rounded-xl shadow-md"
-            />
+          {/* صندوق الصورة الرئيسية بحجم ثابت */}
+          <div className="relative mb-4 bg-gray-50 rounded-xl shadow-md overflow-hidden w-full md:w-[60%] mx-auto aspect-square">
+          <div className="absolute inset-0 flex items-center justify-center">
+              <img 
+                src={product.images[selectedImage]?.imageUrl} 
+                alt={product.name} 
+                className="max-w-full max-h-full object-contain cursor-zoom-in"
+                onClick={toggleZoom}
+              />
+            </div>
             <button 
               onClick={() => setIsFavorite(!isFavorite)}
-              className="absolute top-4 right-4 bg-white/70 p-2 rounded-full hover:bg-white transition-all"
+              className="absolute top-4 right-4 bg-white/70 p-2 rounded-full hover:bg-white transition-all z-10"
             >
               <Heart 
                 className={`w-6 h-6 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-700'}`} 
               />
             </button>
+            {/* أيقونة تكبير */}
+            <div className="absolute bottom-4 left-4 bg-white/70 px-2 py-1 rounded-full text-xs text-gray-700 flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              انقر للتكبير
+            </div>
           </div>
 
           {/* صور مصغرة */}
-          <div className="flex space-x-2 rtl:space-x-reverse">
+          <div className="flex space-x-2 rtl:space-x-reverse overflow-x-auto py-2">
             {product.images.map((img, index) => (
-              <img 
+              <div 
                 key={index}
-                src={img.imageUrl} 
-                alt={`${product.name} - صورة ${index + 1}`}
                 onClick={() => handleImageChange(index)}
-                className={`w-16 h-16 object-cover rounded-lg cursor-pointer 
-                  ${selectedImage === index ? 'border-2 border-blue-500' : 'opacity-70'}`}
-              />
+                className={`min-w-[64px] w-16 h-16 rounded-lg cursor-pointer overflow-hidden border-2
+                  ${selectedImage === index ? 'border-blue-500' : 'border-transparent opacity-70'}`}
+              >
+                <div className="w-full h-full flex items-center justify-center bg-gray-50">
+                  <img 
+                    src={img.imageUrl} 
+                    alt={`${product.name} - صورة ${index + 1}`}
+                    className="max-w-full max-h-full object-contain"
+                  />
+                </div>
+              </div>
             ))}
           </div>
         </div>
@@ -184,16 +208,17 @@ const ProductDetailsPage: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold mb-2">{product.name}</h1>
           
+          {/* التقييمات */}
           <div className="flex items-center gap-2 mb-4">
             <div className="flex text-yellow-500">
-              {[...Array(5)].map((_, i) => (
-                <Star 
-                  key={i} 
-                  className={`w-5 h-5 ${i < 4 ? 'fill-yellow-500' : ''}`} 
-                />
-              ))}
+              <RatingStars 
+                rating={product.averageRating ? Number(product.averageRating) : 0} 
+                size="sm" 
+              />
             </div>
-            <span className="text-gray-600 text-sm">(4 تقييمات)</span>
+            <span className="text-gray-600 text-sm">
+              ({product.totalReviews || 0} تقييم)
+            </span>
           </div>
 
           <div className="mb-4">
@@ -237,8 +262,9 @@ const ProductDetailsPage: React.FC = () => {
               <button 
                 onClick={() => handleQuantityChange('decrease')}
                 className="p-2 hover:bg-gray-100"
+                disabled={quantity <= 1}
               >
-                <ArrowLeft className="w-5 h-5" />
+                <span className="w-5 h-5 flex items-center justify-center font-bold">-</span>
               </button>
               <span className="px-4">{quantity}</span>
               <button 
@@ -246,7 +272,7 @@ const ProductDetailsPage: React.FC = () => {
                 className="p-2 hover:bg-gray-100"
                 disabled={quantity >= product.stock}
               >
-                <ArrowRight className="w-5 h-5" />
+                <span className="w-5 h-5 flex items-center justify-center font-bold">+</span>
               </button>
             </div>
           </div>
@@ -284,38 +310,128 @@ const ProductDetailsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* معلومات إضافية */}
-      <div className="mt-12">
-        <div className="border-b pb-2 mb-4">
-          <h2 className="text-xl font-semibold">تفاصيل المنتج</h2>
+      {/* تبويبات المعلومات والتقييمات والتعليقات */}
+      <div className="mt-10">
+        <div className="border-b mb-6">
+          <ul className="flex flex-wrap -mb-px">
+            <li className="ml-4">
+              <button
+                onClick={() => setActiveTab('overview')}
+                className={`inline-block py-4 px-1 border-b-2 font-medium text-sm
+                  ${activeTab === 'overview'
+                    ? 'border-purple-600 text-purple-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+              >
+                نظرة عامة
+              </button>
+            </li>
+            <li className="ml-4">
+              <button
+                onClick={() => setActiveTab('reviews')}
+                className={`inline-block py-4 px-1 border-b-2 font-medium text-sm
+                  ${activeTab === 'reviews'
+                    ? 'border-purple-600 text-purple-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+              >
+                التقييمات ({product.totalReviews || 0})
+              </button>
+            </li>
+            <li className="ml-4">
+              <button
+                onClick={() => setActiveTab('comments')}
+                className={`inline-block py-4 px-1 border-b-2 font-medium text-sm
+                  ${activeTab === 'comments'
+                    ? 'border-purple-600 text-purple-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+              >
+                التعليقات
+              </button>
+            </li>
+          </ul>
         </div>
-        <div className="grid md:grid-cols-2 gap-4">
-          <div>
-            <h3 className="font-medium mb-2">الوصف</h3>
-            <p className="text-gray-600">{product.description}</p>
-          </div>
-          <div>
-            <h3 className="font-medium mb-2">المواصفات</h3>
-            <ul className="space-y-2 text-gray-600">
-              <li>
-                <span className="font-medium">التصنيف:</span> {product.category}
-              </li>
-              <li>
-                <span className="font-medium">المخزون:</span> {product.stock} قطعة
-              </li>
-              {product.hasDiscount && (
-                <li>
-                  <span className="font-medium">الخصم:</span> {' '}
-                  {product.discountType === 'Percentage' 
-                    ? `${product.discountValue}%` 
-                    : `${product.discountValue} ريال`}
-                </li>
-              )}
-              {/* يمكنك إضافة المزيد من التفاصيل هنا */}
-            </ul>
-          </div>
+
+        {/* محتوى التبويب النشط */}
+        <div className="mt-4">
+          {activeTab === 'overview' && (
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="font-medium mb-3 text-xl">الوصف</h3>
+                <p className="text-gray-600">{product.description}</p>
+              </div>
+              <div>
+                <h3 className="font-medium mb-3 text-xl">المواصفات</h3>
+                <ul className="space-y-2 text-gray-600">
+                  <li className="flex justify-between py-2 border-b">
+                    <span className="font-medium">التصنيف:</span>
+                    <span>{product.category}</span>
+                  </li>
+                  <li className="flex justify-between py-2 border-b">
+                    <span className="font-medium">المخزون:</span>
+                    <span>{product.stock} قطعة</span>
+                  </li>
+                  {product.hasDiscount && (
+                    <li className="flex justify-between py-2 border-b">
+                      <span className="font-medium">الخصم:</span>
+                      <span>
+                        {product.discountType === 'Percentage' 
+                          ? `${product.discountValue}%` 
+                          : `${product.discountValue} ريال`}
+                      </span>
+                    </li>
+                  )}
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'reviews' && (
+            <ReviewSection productId={product.id} />
+          )}
+
+          {activeTab === 'comments' && (
+            <CommentSection productId={product.id} />
+          )}
         </div>
       </div>
+
+      {/* وضع تكبير الصورة - يظهر عند الضغط على الصورة */}
+      {zoomedImage && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="relative max-w-4xl w-full max-h-full">
+            <button 
+              onClick={toggleZoom}
+              className="absolute top-0 right-0 bg-white/20 p-2 rounded-full text-white z-10 -m-4"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <img 
+              src={product.images[selectedImage]?.imageUrl}
+              alt={product.name}
+              className="max-w-full max-h-[90vh] object-contain mx-auto"
+            />
+            
+            {/* شريط الصور المصغرة في وضع التكبير */}
+            <div className="flex justify-center mt-4 gap-2 overflow-x-auto">
+              {product.images.map((img, index) => (
+                <div 
+                  key={index}
+                  onClick={() => handleImageChange(index)}
+                  className={`w-16 h-16 rounded cursor-pointer overflow-hidden border-2
+                    ${selectedImage === index ? 'border-white' : 'border-transparent opacity-50'}`}
+                >
+                  <div className="w-full h-full flex items-center justify-center bg-gray-800">
+                    <img 
+                      src={img.imageUrl} 
+                      alt={`${product.name} - صورة ${index + 1}`}
+                      className="max-w-full max-h-full object-contain"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

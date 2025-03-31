@@ -8,6 +8,7 @@ import {
     StockStatus
 } from '../types/dashboard';
 import { Product as ProductType } from '../types/product';
+import { SalesData } from '../types/dashboard';
 
 interface DailyOrder {
   date: string;
@@ -15,61 +16,44 @@ interface DailyOrder {
   revenue: number;
 }
 
-interface SalesData {
-    name: string;
-    sales: number;
-    revenue: number;
-    subTotal: number;
-    vat: number;
-    deliveryFees: number;
-  }
-  
-  // تحديث تعريف TopProduct لإضافة حقل id
-  interface TopProduct {
-    id: number; // إضافة حقل id المفقود
-    name: string;
-    sales: number;
-    revenue: number;
-  }
-  
-  interface Customer {
-    id: number;
-    name: string;
-    ordersCount?: number; // جعلها اختيارية
-    purchases: number;
-    totalSpent: number;
-    lastPurchase: string;
-  }
-  
-  // تعريف SalesAnalytics ليتوافق مع البيانات المستخدمة
-  interface SalesAnalytics {
-    date: string;
-    sales: number;
-    revenue: number;
-    subTotal: number;
-    vat: number;
-    deliveryFees: number;
-  }
-  
-  // تحديث تعريف DailyOrder ليشمل التفاصيل المطلوبة
-  interface DailyOrder {
-    date: string;
-    count: number;
-    revenue: number;
-  }
-  
-  // تحديث OrderStats لتتوافق مع الشكل المستخدم في الكود
-  interface OrderStats {
-    totalOrders: number;
-    completedOrders: number;
-    pendingOrders: number;
-    processingOrders: number;
-    cancelledOrders: number;
-    totalRevenue: number;
-    averageOrderValue: number;
-    dailyOrders: DailyOrder[]; // استخدام DailyOrder بدلاً من never[]
-  }
+// تحديث تعريف TopProduct لإضافة حقل id
+interface TopProduct {
+  id: number; // إضافة حقل id المفقود
+  name: string;
+  sales: number;
+  revenue: number;
+}
 
+interface Customer {
+  id: number;
+  name: string;
+  ordersCount?: number; // جعلها اختيارية
+  purchases: number;
+  totalSpent: number;
+  lastPurchase: string;
+}
+
+// تعريف SalesAnalytics ليتوافق مع البيانات المستخدمة
+interface SalesAnalytics {
+  date: string;
+  sales: number;
+  revenue: number;
+  subTotal: number;
+  vat: number;
+  deliveryFees: number;
+}
+
+// تحديث OrderStats لتتوافق مع الشكل المستخدم في الكود
+interface OrderStats {
+  totalOrders: number;
+  completedOrders: number;
+  pendingOrders: number;
+  processingOrders: number;
+  cancelledOrders: number;
+  totalRevenue: number;
+  averageOrderValue: number;
+  dailyOrders: DailyOrder[]; // استخدام DailyOrder بدلاً من never[]
+}
 
 export const useDashboard = () => {
     const [searchTerm, setSearchTerm] = useState<string>('');
@@ -101,7 +85,7 @@ export const useDashboard = () => {
       totalRevenue: 0,
       averageOrderValue: 0,
       dailyOrders: []
-  });
+    });
 
     // تحويل نوع المنتج
     const transformProduct = (product: ProductType): DashboardProduct => ({
@@ -109,9 +93,6 @@ export const useDashboard = () => {
         images: product.images.map(img => img.imageUrl)
     });
 
-    
-
-    
     useEffect(() => {
         const fetchDashboardData = async () => {
             try {
@@ -147,6 +128,7 @@ export const useDashboard = () => {
                     
                     const formattedSalesData = salesData.map(sale => ({
                         name: new Date(sale.date).toLocaleDateString('ar-SA'),
+                        date: sale.date, // أضف هذا السطر للتأكد من أن date موجود
                         sales: sale.sales,
                         revenue: sale.revenue,
                         subTotal: sale.subTotal,
@@ -166,15 +148,43 @@ export const useDashboard = () => {
                     const orderStats = await orderService.getOrdersStatistics();
                     setOrderStats(orderStats);
                     
-                    // 4. حساب الأرباح
-                    const profitCalcs = {
-                        totalProfit: orderStats.totalRevenue,
-                        netProfit: orderStats.totalRevenue * 0.7,
-                        grossMargin: 30,
-                        profitMargin: 21
-                    };
-                    
-                    setProfitCalculations(profitCalcs);
+                    try {
+                        // 4. جلب تقرير الأرباح
+                        const profitReport = await orderService.getProfitReport();
+                        
+                        // حساب هوامش الربح
+                        const grossMargin = profitReport.totalRevenue > 0 
+                            ? ((profitReport.totalRevenue - profitReport.totalVat) / profitReport.totalRevenue) * 100 
+                            : 0;
+                            
+                        const profitMargin = profitReport.totalRevenue > 0 
+                            ? (profitReport.netProfit / profitReport.totalRevenue) * 100 
+                            : 0;
+                        
+                        // تعيين بيانات الأرباح الفعلية
+                        const profitCalcs = {
+                            totalProfit: profitReport.totalRevenue,
+                            netProfit: profitReport.netProfit,
+                            grossMargin: parseFloat(grossMargin.toFixed(2)),
+                            profitMargin: parseFloat(profitMargin.toFixed(2))
+                        };
+                        
+                        console.log('Profit calculations from API:', profitCalcs);
+                        setProfitCalculations(profitCalcs);
+                    } catch (profitError) {
+                        console.error('Error fetching profit report:', profitError);
+                        
+                        // استخدام إحصائيات الطلبات كبديل في حالة فشل استدعاء تقرير الأرباح
+                        const profitCalcs = {
+                            totalProfit: orderStats.totalRevenue,
+                            netProfit: orderStats.totalRevenue * 0.7,
+                            grossMargin: 30,
+                            profitMargin: 21
+                        };
+                        
+                        console.log('Using fallback profit calculations:', profitCalcs);
+                        setProfitCalculations(profitCalcs);
+                    }
                     
                     // تحديث عدد العملاء النشطين
                     setCalculations(prev => ({

@@ -4,8 +4,64 @@ import { DiscountType, DiscountScope, Discount, CreateDiscountDto } from '../typ
 import { Product } from '../types/product';
 
 class DiscountService {
-  // استخدام المسار النسبي بدلاً من العنوان الكامل
+  // استخدام المسار النسبي 
   private readonly basePath = '/Discounts';
+
+  // دالة مساعدة لتحويل النص إلى نوع التخفيض المناسب
+  private parseDiscountType(typeValue: string | number): DiscountType {
+    if (typeof typeValue === 'string') {
+      if (typeValue === 'Percentage') return DiscountType.Percentage;
+      if (typeValue === 'FixedAmount') return DiscountType.FixedAmount;
+
+      const numericValue = parseInt(typeValue, 10);
+      if (!isNaN(numericValue)) {
+        return numericValue;
+      }
+    }
+    return Number(typeValue);
+  }
+
+  // دالة مساعدة لتحويل النص إلى نطاق التخفيض المناسب
+  private parseDiscountScope(scopeValue: string | number): DiscountScope {
+    if (typeof scopeValue === 'string') {
+      if (scopeValue === 'AllProducts') return DiscountScope.AllProducts;
+      if (scopeValue === 'Category') return DiscountScope.Category;
+      if (scopeValue === 'Product') return DiscountScope.Product;
+      if (scopeValue === 'Global') return DiscountScope.AllProducts; // الخادم قد يستخدم "Global"
+
+      const numericValue = parseInt(scopeValue, 10);
+      if (!isNaN(numericValue)) {
+        return numericValue;
+      }
+    }
+    return Number(scopeValue);
+  }
+
+  // دالة مساعدة لتحويل كائن التخفيض القادم من الخادم إلى الهيكل المناسب للواجهة
+  private normalizeDiscount(serverDiscount: any): Discount {
+    const normalizedType = this.parseDiscountType(serverDiscount.type);
+    const normalizedScope = this.parseDiscountScope(serverDiscount.scope);
+
+    // تحويل المنتجات إلى الهيكل المناسب
+    const normalizedProducts = serverDiscount.products?.map((p: any) => ({
+      productId: p.id
+    })) || [];
+
+    return {
+      id: serverDiscount.id,
+      name: serverDiscount.name,
+      description: serverDiscount.description,
+      type: normalizedType,
+      value: serverDiscount.value,
+      scope: normalizedScope,
+      categoryName: serverDiscount.categoryName,
+      products: normalizedProducts,
+      startDate: serverDiscount.startDate,
+      endDate: serverDiscount.endDate,
+      isActive: serverDiscount.isActive,
+      createdAt: new Date(serverDiscount.createdAt)
+    };
+  }
 
   async getDiscountForCartItem(productId: number, categoryName: string): Promise<{
     hasDiscount: boolean;
@@ -16,7 +72,6 @@ class DiscountService {
     originalPrice?: number;
   }> {
     try {
-      // استخدام api بدلاً من الوصول المباشر مع رأس المصادقة
       const response = await api.get<{
         discount: Discount;
         product: Product;
@@ -27,28 +82,20 @@ class DiscountService {
       if (response.data) {
         const { discount, product } = response.data;
         const originalPrice = product.price;
-        let discountedPrice: number | undefined;
-
+        const normalizedType = this.parseDiscountType(discount.type);
+        
         // حساب السعر بعد الخصم
-        if (discount.type === DiscountType.Percentage) {
-          discountedPrice = this.calculateDiscountedPrice(
-            originalPrice, 
-            discount.value, 
-            DiscountType.Percentage
-          );
-        } else if (discount.type === DiscountType.FixedAmount) {
-          discountedPrice = this.calculateDiscountedPrice(
-            originalPrice, 
-            discount.value, 
-            DiscountType.FixedAmount
-          );
-        }
+        const discountedPrice = this.calculateDiscountedPrice(
+          originalPrice, 
+          discount.value, 
+          normalizedType
+        );
 
         return {
           hasDiscount: true,
           discountedPrice,
           discountValue: discount.value,
-          discountType: discount.type,
+          discountType: normalizedType,
           discountName: discount.name,
           originalPrice
         };
@@ -65,7 +112,7 @@ class DiscountService {
     }
   }
 
-  // دالة مساعدة لحساب السعر بعد الخصم (لم تتغير)
+  // دالة مساعدة لحساب السعر بعد الخصم
   private calculateDiscountedPrice(
     originalPrice: number, 
     discountValue: number, 
@@ -74,17 +121,16 @@ class DiscountService {
     if (discountType === DiscountType.Percentage) {
       // تقريب الناتج إلى رقمين عشريين
       return Math.round((originalPrice * (1 - discountValue / 100)) * 100) / 100;
-    } else if (discountType === DiscountType.FixedAmount) {
+    } else {
       // تقريب الناتج إلى رقمين عشريين
       return Math.round(Math.max(originalPrice - discountValue, 0) * 100) / 100;
     }
-    return originalPrice;
   }
 
   async getAllDiscounts(): Promise<Discount[]> {
     try {
-      const response = await api.get<Discount[]>(this.basePath);
-      return response.data;
+      const response = await api.get<any[]>(this.basePath);
+      return response.data.map(discount => this.normalizeDiscount(discount));
     } catch (error) {
       console.error('Error fetching discounts:', error);
       throw handleApiError(error);
@@ -93,8 +139,8 @@ class DiscountService {
 
   async getDiscount(id: number): Promise<Discount> {
     try {
-      const response = await api.get<Discount>(`${this.basePath}/${id}`);
-      return response.data;
+      const response = await api.get<any>(`${this.basePath}/${id}`);
+      return this.normalizeDiscount(response.data);
     } catch (error) {
       console.error(`Error fetching discount ${id}:`, error);
       throw handleApiError(error);
@@ -103,22 +149,37 @@ class DiscountService {
 
   async createDiscount(discount: CreateDiscountDto): Promise<Discount> {
     try {
-      // تصحيح بيانات الخصم قبل الإرسال
-      const fixedDiscount = {
-        ...discount,
-        // تحويل القيم إلى الأنواع المناسبة
+      // تحضير البيانات بالشكل المناسب للخادم
+      const requestData: {
+        name: string;
+        description: string;
+        type: number;
+        value: number;
+        scope: number;
+        categoryName: string | null | undefined;
+        productIds: number[] | null;
+        startDate: string;
+        endDate: string;
+        isActive: boolean;
+      } = {
+        name: discount.name,
+        description: discount.description,
         type: Number(discount.type),
         value: Number(discount.value),
         scope: Number(discount.scope),
-        // تعيين القيم المناسبة حسب نطاق الخصم
         categoryName: Number(discount.scope) === DiscountScope.Category ? discount.categoryName : null,
-        productIds: Number(discount.scope) === DiscountScope.Product ? discount.productIds : []
+        // تصحيح مشكلة نوع productIds
+        productIds: Number(discount.scope) === DiscountScope.Product ? 
+                  (discount.productIds ? [...discount.productIds] : []) : null,
+        startDate: discount.startDate,
+        endDate: discount.endDate,
+        isActive: discount.isActive
       };
       
-      console.log("Sending discount data:", JSON.stringify(fixedDiscount, null, 2));
+      console.log("Sending discount data:", JSON.stringify(requestData, null, 2));
       
-      const response = await api.post<Discount>(this.basePath, fixedDiscount);
-      return response.data;
+      const response = await api.post<any>(this.basePath, requestData);
+      return this.normalizeDiscount(response.data);
     } catch (error) {
       console.error('Error creating discount:', error);
       throw handleApiError(error);
@@ -127,31 +188,43 @@ class DiscountService {
 
   async updateDiscount(id: number, discount: CreateDiscountDto): Promise<Discount> {
     try {
-      // تصحيح بيانات الخصم قبل الإرسال
-      const fixedDiscount = {
-        ...discount,
-        // تحويل القيم إلى الأنواع المناسبة
+      // تحضير البيانات بالشكل المناسب للخادم
+      const requestData: {
+        name: string;
+        description: string;
+        type: number;
+        value: number;
+        scope: number;
+        categoryName: string | null | undefined;
+        productIds: number[] | null;
+        startDate: string;
+        endDate: string;
+        isActive: boolean;
+      } = {
+        name: discount.name,
+        description: discount.description,
         type: Number(discount.type),
         value: Number(discount.value),
         scope: Number(discount.scope),
-        // تعيين القيم المناسبة حسب نطاق الخصم
         categoryName: Number(discount.scope) === DiscountScope.Category ? discount.categoryName : null,
-        // التأكد من أن productIds هو مصفوفة
-        productIds: Array.isArray(discount.productIds) ? discount.productIds : 
-                  (Number(discount.scope) === DiscountScope.Product && discount.productIds ? discount.productIds : [])
+        // تصحيح مشكلة نوع productIds
+        productIds: Number(discount.scope) === DiscountScope.Product ? 
+                  (discount.productIds ? [...discount.productIds] : []) : null,
+        startDate: discount.startDate,
+        endDate: discount.endDate,
+        isActive: discount.isActive
       };
       
-      console.log("Updating discount data:", JSON.stringify(fixedDiscount, null, 2));
+      console.log("Updating discount data:", JSON.stringify(requestData, null, 2));
       
       // إضافة مهلة أطول للطلب في حالة الشبكات البطيئة
-      const response = await api.put<Discount>(
+      const response = await api.put<any>(
         `${this.basePath}/${id}`, 
-        fixedDiscount, 
-        { timeout: 10000 } // 10 ثوان مهلة للطلب
+        requestData, 
+        { timeout: 15000 } // 15 ثانية مهلة للطلب
       );
       
-      console.log("Server response:", response.data);
-      return response.data;
+      return this.normalizeDiscount(response.data);
     } catch (error: any) {
       console.error(`Error updating discount ${id}:`, error);
       
@@ -185,10 +258,10 @@ class DiscountService {
 
   async getApplicableDiscounts(productId: number, categoryName: string): Promise<Discount[]> {
     try {
-      const response = await api.get<Discount[]>(`${this.basePath}/applicable`, {
+      const response = await api.get<any[]>(`${this.basePath}/applicable`, {
         params: { productId, categoryName }
       });
-      return response.data;
+      return response.data.map(discount => this.normalizeDiscount(discount));
     } catch (error) {
       console.error('Error fetching applicable discounts:', error);
       throw handleApiError(error);
