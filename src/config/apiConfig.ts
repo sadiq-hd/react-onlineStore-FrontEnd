@@ -8,8 +8,8 @@ export const API_CONFIG = {
   // BASE_URL: 'http://localhost:5000/api',
 
   // عنوان الصور (إذا كان مختلفاً)
-  IMAGE_URL: 'https://reactbackend-production.up.railway.app',
-  // IMAGE_URL: 'http://localhost:5000',
+  // IMAGE_URL: 'https://reactbackend-production.up.railway.app',
+  IMAGE_URL: 'https://localhost:5000',
 
   
   // صورة بديلة
