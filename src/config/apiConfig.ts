@@ -84,6 +84,11 @@ export const formatImageUrl = (imageUrl: string): string => {
   if (imageUrl.startsWith('http')) {
     return imageUrl;
   }
+  if (imageUrl.startsWith('/images/')) {
+    return `${API_CONFIG.IMAGE_URL}${imageUrl}`;
+  }
+  
+  return `${API_CONFIG.IMAGE_URL}/images/${imageUrl.replace(/^\/+/, '')}`;
 
   // تنظيف وتنسيق المسار
   const cleanPath = imageUrl
