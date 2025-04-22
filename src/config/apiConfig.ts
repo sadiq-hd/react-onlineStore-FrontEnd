@@ -4,12 +4,12 @@ import axios from 'axios';
 // إعدادات API
 export const API_CONFIG = {
   // عنوان API الأساسي
-  // BASE_URL: 'https://reactonlinestore-app-h5atcvhec8dcd0da.eastasia-01.azurewebsites.net/api',
-  BASE_URL: 'http://localhost:5000/api',
+  BASE_URL: 'https://reactbackend-production.up.railway.app/api',
+  // BASE_URL: 'http://localhost:5000/api',
 
   // عنوان الصور (إذا كان مختلفاً)
-  // IMAGE_URL: 'https://reactonlinestore-app-h5atcvhec8dcd0da.eastasia-01.azurewebsites.net',
-  IMAGE_URL: 'http://localhost:5000',
+  IMAGE_URL: 'https://reactbackend-production.up.railway.app',
+  // IMAGE_URL: 'http://localhost:5000',
 
   
   // صورة بديلة
