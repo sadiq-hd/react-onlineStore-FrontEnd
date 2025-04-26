@@ -405,31 +405,9 @@ const Home: React.FC = () => {
       })}
 
       {/* بانر اشتراك نشرة بريدية */}
-      <div className="mt-12 bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="bg-gradient-to-r from-purple-600 to-purple-800 p-6 text-white">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="text-center md:text-right">
-              <h3 className="text-xl font-bold mb-2">اشترك في نشرتنا البريدية</h3>
-              <p className="text-purple-100 text-sm">احصل على آخر العروض والتخفيضات مباشرة إلى بريدك الإلكتروني</p>
-            </div>
-            <div className="w-full md:w-auto">
-              <div className="flex">
-                <input
-                  type="email"
-                  placeholder="بريدك الإلكتروني"
-                  className="flex-1 rounded-r-lg px-4 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-300"
-                />
-                <button
-                  className="bg-white text-purple-700 hover:bg-purple-100 px-4 py-2 rounded-l-lg font-medium transition-colors"
-                >
-                  اشتراك
-                </button>
-              </div>
-            </div>
-          </div>
+     
         </div>
-      </div>
-    </div>
+ 
   );
 };
 
