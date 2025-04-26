@@ -1,6 +1,8 @@
+// ProductDetailsPageFixed.tsx (ملف جديد كلياً)
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { productService } from '../services/productService';
+import { reviewService } from '../services/reviewService';
 import { Product } from '../types/product';
 import { 
   Heart, 
@@ -14,14 +16,55 @@ import {
 import { toast } from 'react-toastify';
 import { useCart } from '../context/CartContext';
 import SaudiRiyal from "../assets/Saudi_Riyal.png";
+
+// استبدال مكونات الاستيراد
 import ReviewSection from '../components/reviews/ReviewSection';
 import CommentSection from '../components/reviews/CommentSection';
-import RatingStars from '../components/reviews/RatingStars';
+
+// مكون RatingStars داخلي
+// بدلاً من استيراده، نعرفه هنا داخل الملف نفسه
+const InternalRatingStars = ({ 
+  rating = 0, 
+  size = "md"
+}: { 
+  rating: number; 
+  size?: "sm" | "md" | "lg";
+}) => {
+  // تحديد حجم النجوم حسب القيمة المرسلة
+  const starSize = {
+    sm: "w-4 h-4",
+    md: "w-5 h-5",
+    lg: "w-6 h-6"
+  }[size];
+  
+  return (
+    <div className="flex">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <Star 
+          key={star}
+          className={`${starSize} ${
+            star <= Math.round(rating) 
+            ? 'fill-yellow-400 text-yellow-400' 
+            : 'text-gray-300'
+          }`} 
+        />
+      ))}
+    </div>
+  );
+};
+
+// تعريف واجهة لملخص التقييمات داخلياً
+interface ReviewSummaryData {
+  productId: number;
+  averageRating: number;
+  totalReviews: number;
+  ratingBreakdown: Record<number, number>;
+}
 
 const ProductDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const [product, setProduct] = useState<Product | null>(null);
+  const [reviewData, setReviewData] = useState<ReviewSummaryData | null>(null);
   const [quantity, setQuantity] = useState<number>(1);
   const [selectedImage, setSelectedImage] = useState<number>(0);
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
@@ -29,55 +72,95 @@ const ProductDetailsPage: React.FC = () => {
   const [zoomedImage, setZoomedImage] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'reviews' | 'comments'>('overview');
   const cartContext = useCart();
+  const [isLoadingReviews, setIsLoadingReviews] = useState<boolean>(false);
 
+  // جلب المنتج
   useEffect(() => {
     const fetchProduct = async () => {
+      if (!id) return;
+      
       try {
-        if (id) {
-          // البحث عن المنتج ضمن قائمة المنتجات مع الخصومات
-          const productsWithDiscounts = await productService.getProductsWithDiscounts();
-          const productWithDiscount = productsWithDiscounts.find(p => p.id === Number(id));
-          
-          if (productWithDiscount) {
-            setProduct(productWithDiscount);
-          } else {
-            // إذا لم يتم العثور على المنتج ضمن القائمة، استخدم الطريقة العادية
-            const fetchedProduct = await productService.getProductById(Number(id));
-            setProduct(fetchedProduct);
-          }
+        const productsWithDiscounts = await productService.getProductsWithDiscounts();
+        const productWithDiscount = productsWithDiscounts.find(p => p.id === Number(id));
+        
+        if (productWithDiscount) {
+          setProduct(productWithDiscount);
+        } else {
+          const fetchedProduct = await productService.getProductById(Number(id));
+          setProduct(fetchedProduct);
         }
       } catch (error) {
         console.error('Error fetching product:', error);
         toast.error('حدث خطأ في جلب تفاصيل المنتج');
       }
     };
-
+    
     fetchProduct();
+  }, [id]);
+
+  // جلب ملخص التقييمات (في useEffect منفصل)
+  useEffect(() => {
+    const fetchReviewSummary = async () => {
+      if (!id) return;
+      
+      setIsLoadingReviews(true);
+      
+      try {
+        // تنظيف البيانات المستلمة
+        const defaultData: ReviewSummaryData = {
+          productId: Number(id),
+          averageRating: 0,
+          totalReviews: 0,
+          ratingBreakdown: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+        };
+        
+        try {
+          const response = await reviewService.getProductReviewSummary(Number(id));
+          
+          if (response && typeof response === 'object') {
+            // تنظيف البيانات المستلمة
+            const cleanData: ReviewSummaryData = {
+              ...defaultData,
+              productId: Number(id)
+            };
+            
+            // نسخ البيانات المتوفرة فقط
+            if (typeof response.averageRating === 'number') {
+              cleanData.averageRating = response.averageRating;
+            }
+            
+            if (typeof response.totalReviews === 'number') {
+              cleanData.totalReviews = response.totalReviews;
+            }
+            
+           
+          
+            
+            setReviewData(cleanData);
+          } else {
+            setReviewData(defaultData);
+          }
+        } catch (error) {
+          console.error('Error fetching review summary:', error);
+          setReviewData(defaultData);
+        }
+      } finally {
+        setIsLoadingReviews(false);
+      }
+    };
+    
+    fetchReviewSummary();
   }, [id]);
 
   const handleShare = async () => {
     if (!product) return;
 
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: product.name,
-          text: `شاهد هذا المنتج: ${product.name}`,
-          url: window.location.href
-        });
-      } catch (error) {
-        console.error('خطأ في المشاركة:', error);
-        toast.error('حدث خطأ أثناء المشاركة');
-      }
-    } else {
-      // fallback للمتصفحات التي لا تدعم Web Share API
-      try {
-        await navigator.clipboard.writeText(window.location.href);
-        toast.success('تم نسخ رابط المنتج');
-      } catch (error) {
-        console.error('خطأ في نسخ الرابط:', error);
-        toast.error('حدث خطأ أثناء نسخ الرابط');
-      }
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      toast.success('تم نسخ رابط المنتج');
+    } catch (error) {
+      console.error('خطأ في نسخ الرابط:', error);
+      toast.error('حدث خطأ أثناء نسخ الرابط');
     }
   };
 
@@ -86,16 +169,11 @@ const ProductDetailsPage: React.FC = () => {
 
     try {
       setIsAddingToCart(true);
-      
-      // استخدام addToCart من سياق السلة
       await cartContext.addToCart(product.id, quantity);
-      
-      // عرض رسالة نجاح
       toast.success(`تمت إضافة ${quantity} من ${product.name} للسلة`, {
         position: "bottom-right",
         autoClose: 3000,
       });
-      
     } catch (error) {
       console.error('Error adding to cart:', error);
       toast.error('حدث خطأ أثناء إضافة المنتج للسلة');
@@ -151,14 +229,43 @@ const ProductDetailsPage: React.FC = () => {
     }
   };
 
+  // مكون بسيط لعرض ملخص التقييمات
+  const ProductRatingSummary = () => {
+    if (isLoadingReviews) {
+      return (
+        <div className="my-4 p-4 bg-gray-50 rounded-lg animate-pulse">
+          <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+        </div>
+      );
+    }
+    
+    if (!reviewData) {
+      return (
+        <div className="my-4 p-4 bg-gray-50 rounded-lg">
+          <p className="text-gray-500 text-center">لا توجد تقييمات متاحة</p>
+        </div>
+      );
+    }
+    
+    const { averageRating, totalReviews, ratingBreakdown } = reviewData;
+    
+    return (
+      <div className="">
+
+          </div>
+   
+    );
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 rtl">
       <div className="grid md:grid-cols-2 gap-8">
-        {/* معرض الصور - تم تعديله ليكون بحجم ثابت */}
+        {/* معرض الصور */}
         <div>
-          {/* صندوق الصورة الرئيسية بحجم ثابت */}
+          {/* الصورة الرئيسية */}
           <div className="relative mb-4 bg-gray-50 rounded-xl shadow-md overflow-hidden w-full md:w-[60%] mx-auto aspect-square">
-          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="absolute inset-0 flex items-center justify-center">
               <img 
                 src={product.images[selectedImage]?.imageUrl} 
                 alt={product.name} 
@@ -174,7 +281,6 @@ const ProductDetailsPage: React.FC = () => {
                 className={`w-6 h-6 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-700'}`} 
               />
             </button>
-            {/* أيقونة تكبير */}
             <div className="absolute bottom-4 left-4 bg-white/70 px-2 py-1 rounded-full text-xs text-gray-700 flex items-center">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -208,19 +314,23 @@ const ProductDetailsPage: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold mb-2">{product.name}</h1>
           
-          {/* التقييمات */}
+          {/* التقييمات المختصرة */}
           <div className="flex items-center gap-2 mb-4">
             <div className="flex text-yellow-500">
-              <RatingStars 
-                rating={product.averageRating ? Number(product.averageRating) : 0} 
+              <InternalRatingStars 
+                rating={reviewData?.averageRating || 0}
                 size="sm" 
               />
             </div>
             <span className="text-gray-600 text-sm">
-              ({product.totalReviews || 0} تقييم)
+              ({reviewData?.totalReviews || 0} تقييم)
             </span>
           </div>
+          
+          {/* عرض تفاصيل التقييمات */}
+          <ProductRatingSummary />
 
+          {/* السعر والخصم */}
           <div className="mb-4">
             {product.hasDiscount ? (
               <div className="space-y-1">
@@ -253,6 +363,7 @@ const ProductDetailsPage: React.FC = () => {
             {renderStockStatus()}
           </div>
 
+          {/* وصف المنتج */}
           <p className="text-gray-600 mb-4">{product.description}</p>
 
           {/* خيارات الكمية */}
@@ -299,9 +410,8 @@ const ProductDetailsPage: React.FC = () => {
               )}
             </button>
             <button 
-              onClick={() => handleShare()}
-              className="flex items-center justify-center gap-2 px-6 py-3 
-              rounded-lg border border-gray-300 hover:bg-gray-100"
+              onClick={handleShare}
+              className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg border border-gray-300 hover:bg-gray-100"
             >
               <Share2 className="w-5 h-5" />
               مشاركة
@@ -333,7 +443,7 @@ const ProductDetailsPage: React.FC = () => {
                     ? 'border-purple-600 text-purple-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
               >
-                التقييمات ({product.totalReviews || 0})
+                التقييمات ({reviewData?.totalReviews || 0})
               </button>
             </li>
             <li className="ml-4">
@@ -385,16 +495,24 @@ const ProductDetailsPage: React.FC = () => {
           )}
 
           {activeTab === 'reviews' && (
-            <ReviewSection productId={product.id} />
+            <div className="bg-white rounded-lg shadow-sm p-4">
+              {product && product.id && (
+                <ReviewSection productId={product.id} />
+              )}
+            </div>
           )}
 
           {activeTab === 'comments' && (
-            <CommentSection productId={product.id} />
+            <div className="bg-white rounded-lg shadow-sm p-4">
+              {product && product.id && (
+                <CommentSection productId={product.id} />
+              )}
+            </div>
           )}
         </div>
       </div>
 
-      {/* وضع تكبير الصورة - يظهر عند الضغط على الصورة */}
+      {/* وضع تكبير الصورة */}
       {zoomedImage && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="relative max-w-4xl w-full max-h-full">

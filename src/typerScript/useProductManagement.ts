@@ -22,6 +22,7 @@ export const useProductManagement = () => {
   const { state: favoritesState, addToFavorites, removeFromFavorites } = useFavorites();
   const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
 
+  
   const addProduct = async (productData: CreateProductDto, files: File[]): Promise<boolean> => {
     try {
       setLoading(true);

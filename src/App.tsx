@@ -30,6 +30,7 @@ import DiscountsManagement from './pages/DiscountsManagement';
 import ForgotPassword from './pages/auth/ForgotPassword';
 import AdminReviewsPage from './pages/AdminReviewsPage';
 import AdminCommentsPage from './pages/AdminCommentsPage';
+import ProductsPage from './pages/ProductsPage';
 
 // صفحات الخصومات وأكواد الخصم الجديدة
 
@@ -62,7 +63,9 @@ const App: FC = () => {
               <Route path="/register" element={<Register />} />
               <Route path="/signin" element={<Signin />} />
               <Route path="/forgotpassword" element={<ForgotPassword/>} />
-              <Route path="/product/:id" element={<ProductDetailsPage/>}/>              
+              <Route path="/product/:id" element={<ProductDetailsPage/>}/>    
+              <Route path="/products" element={<ProductsPage />} />
+          
               {/* مسارات تسمح للزوار */}
               <Route
                 path="/cart"
